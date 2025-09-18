@@ -1,46 +1,289 @@
-# Getting Started with Create React App
+# GUARD - Grid Usage Anomaly Recognition and Disconnection
+## 👥 Team
+![Team GUARD](public/kelompok.png)
+- **Leader Supervisor**: [Sakti Cahya Buana]
+- **Web Developer**: [Muhammad Farrel Akbar, Sakti Cahya Buana]
+- **Instrument Technician**: [Stasya Adelia, Christy Clarrimond Kewas, Ahmad Maydanul Ilmi]
+- **Institution**: [Gadjah Mada University, Indonesia]
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## 📋 Deskripsi Proyek
 
-## Available Scripts
+GUARD (Grid Usage Anomaly Recognition and Disconnection) adalah sistem deteksi anomali daya yang terintegrasi dengan website sebagai kontrol utama bagi pengguna untuk memonitor dan memutus daya. Sistem ini dikembangkan untuk menyelesaikan permasalahan dalam sektor rumah tangga, khususnya dalam hal pemantauan konsumsi daya yang tidak termonitor secara real-time.
 
-In the project directory, you can run:
+### ✨ Fitur Utama
 
-### `npm start`
+- 🔍 **Real-time Monitoring**: Pemantauan daya 24/7 dengan interval sampling 1 menit
+- ⚡ **Smart Protection**: Pemutusan daya otomatis saat terdeteksi anomali 
+- 📊 **Energy Analytics**: Analisis konsumsi daya dengan visualisasi data
+- 🌐 **Web Interface**: Dashboard responsif untuk monitoring dan kontrol jarak jauh
+- 🔒 **Authentication**: Sistem keamanan dengan JWT token dan password hashing
+- 📱 **Hybrid Operation**: Dapat beroperasi online dan offline
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+## 🏗️ Arsitektur Sistem
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+### Hardware Components
+- **STM32 Microcontroller**: Unit pemrosesan utama
+- **ESP8266 WiFi Module**: Komunikasi wireless
+- **Current & Voltage Sensors**: Monitoring parameter listrik
+- **Relay Module**: Kontrol pemutusan daya
 
-### `npm test`
+### Software Stack
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+#### Frontend
+- **React 18**: JavaScript library untuk user interface
+- **TypeScript**: Type-safe development
+- **Tailwind CSS**: Utility-first styling
+- **Lucide React**: Icon library
 
-### `npm run build`
+#### Backend & Database
+- **PostgreSQL**: Database utama via Supabase
+- **REST API**: HTTP communication layer
+- **JWT Authentication**: Session management
+- **bcrypt**: Password hashing
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+#### Embedded System
+- **STM32Cube IDE**: Development environment
+- **C/C++**: Firmware programming language
+- **FreeRTOS**: Real-time operating system (optional)
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## 🚀 Quick Start
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Prerequisites
 
-### `npm run eject`
+- Node.js (v18 atau lebih tinggi)
+- npm atau yarn
+- STM32Cube IDE
+- Supabase account
+- Hardware components (STM32, ESP8266, sensors)
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+### Installation
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+#### 1. Clone Repository
+```bash
+git clone https://github.com/username/guard-system.git
+cd guard-system
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+#### 2. Frontend Setup
+```bash
+cd guard-frontend
+npm install
+```
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+#### 3. Environment Configuration
+Buat file `.env` di folder frontend:
+```env
+REACT_APP_SUPABASE_URL=your_supabase_url
+REACT_APP_SUPABASE_ANON_KEY=your_supabase_anon_key
+REACT_APP_API_BASE_URL=your_api_base_url
+```
 
-## Learn More
+#### 4. Start Development Server
+```bash
+npm start
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+#### 5. Hardware Setup
+1. Flash firmware STM32 menggunakan STM32Cube IDE
+2. Konfigurasi ESP8266 dengan credentials WiFi
+3. Hubungkan sensor dan relay sesuai skematik
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## 📡 API Endpoints
+
+### Authentication
+```http
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+```
+
+### Device Monitoring
+```http
+GET /api/device/status
+Authorization: Bearer <jwt_token>
+```
+
+### Sensor Data
+```http
+POST /api/sensor/data
+Content-Type: application/json
+
+{
+  "device_id": "GUARD_001",
+  "timestamp": "2025-01-15T10:30:00",
+  "voltage": 220.5,
+  "current": 0.68,
+  "power": 149.94,
+  "is_anomaly": false
+}
+```
+
+### Anomaly Management
+```http
+# Submit anomaly report
+POST /api/anomaly
+
+# Get anomaly logs
+GET /api/anomaly/logs
+
+# Remote control action
+POST /api/control/action
+```
+
+## 🗃️ Database Schema
+
+### Core Tables
+
+#### Users
+- `user_id` (PK): Unique identifier
+- `username`: User login name
+- `password_hash`: Hashed password
+- `email`: User email address
+- `created_at`: Account creation timestamp
+
+#### Sensor_Data
+- `data_id` (PK): Unique data identifier
+- `kulkas_id` (FK): Device reference
+- `timestamp`: Data collection time
+- `voltage`: Voltage reading (DECIMAL)
+- `current`: Current reading (DECIMAL)
+- `power`: Power calculation (DECIMAL)
+- `phase_type`: Power phase information
+- `is_anomaly`: Anomaly detection flag
+
+#### Anomaly_Logs
+- `anomaly_id` (PK): Unique anomaly identifier
+- `kulkas_id` (FK): Device reference
+- `anomaly_type`: Type of detected anomaly
+- `detected_at`: Detection timestamp
+- `status`: Current anomaly status
+
+## 🔧 Konfigurasi Hardware
+
+### STM32 Configuration
+```c
+// ADC Configuration for voltage/current sensing
+HAL_ADC_ConfigChannel(&hadc1, &sConfig);
+
+// UART Configuration for ESP8266 communication
+huart2.Init.BaudRate = 9600;
+huart2.Init.WordLength = UART_WORDLENGTH_8B;
+
+// GPIO Configuration for relay control
+GPIO_InitStruct.Pin = RELAY_PIN;
+GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+```
+
+### ESP8266 WiFi Setup
+```c
+// Connect to WiFi network
+AT+CWJAP="SSID","PASSWORD"
+
+// Configure HTTP POST for data transmission
+AT+HTTPCLIENT=3,0,"http://api.guard.com/sensor/data",,,1,"{data}"
+```
+
+## 📊 Data Flow
+
+1. **Sensor Reading**: STM32 membaca data voltage dan current
+2. **Data Processing**: Kalkulasi RMS, deteksi threshold anomali
+3. **Local Storage**: Data disimpan sementara di STM32 jika offline
+4. **WiFi Transmission**: ESP8266 mengirim data ke cloud via HTTP
+5. **Cloud Processing**: Backend memproses dan menyimpan ke PostgreSQL
+6. **Real-time Update**: Dashboard menampilkan data secara live
+7. **Anomaly Detection**: Sistem memicu proteksi jika diperlukan
+
+## 🛡️ Security Features
+
+- **JWT Authentication**: Secure session management
+- **Password Hashing**: bcrypt untuk keamanan password
+- **API Key**: Device authentication untuk STM32
+- **Input Validation**: Proteksi SQL injection
+- **HTTPS**: Encrypted communication (production)
+
+## 🔍 Testing
+
+### Frontend Testing
+```bash
+npm test
+npm run test:coverage
+```
+
+### API Testing
+Gunakan Postman collection yang tersedia di `/docs/postman/`
+
+### Hardware Testing
+- Simulasi deteksi anomali via Visual Studio Code
+- Testing relay control melalui web interface
+- Validasi komunikasi UART STM32-ESP8266
+
+## 📈 Monitoring & Analytics
+
+Dashboard menyediakan:
+- Real-time power consumption graphs
+- Historical data analysis
+- Anomaly detection logs
+- Energy efficiency metrics
+- Device status monitoring
+
+## 🚨 Troubleshooting
+
+### Common Issues
+
+#### Frontend tidak terhubung ke API
+```bash
+# Periksa environment variables
+echo $REACT_APP_API_BASE_URL
+
+# Restart development server
+npm start
+```
+
+#### STM32 tidak mengirim data
+1. Periksa koneksi UART ke ESP8266
+2. Validasi konfigurasi WiFi
+3. Cek status koneksi internet
+
+#### Database connection error
+1. Verifikasi credentials Supabase
+2. Periksa network connectivity
+3. Restart backend service
+
+## 📚 Documentation
+
+- [Hardware Schematic](docs/hardware/schematic.pdf)
+- [API Documentation](docs/api/endpoints.md)
+- [Database Design](docs/database/schema.sql)
+- [User Manual](docs/user/manual.pdf)
+
+## 🤝 Contributing
+
+1. Fork repository
+2. Buat feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Open Pull Request
+
+## 🔄 Changelog
+
+### v1.0.0 (2025-01-15)
+- Initial release
+- Basic anomaly detection
+- Web dashboard implementation
+- STM32-ESP8266 integration
+
+## 🔮 Roadmap
+
+- [ ] Mobile application (React Native)
+- [ ] Multi-device support
+- [ ] Advanced analytics with ML
+- [ ] Telegram/WhatsApp notifications
+- [ ] Energy optimization suggestions
+
+---
+
+**⚡ GUARD System - Protecting Your Home, One Anomaly at a Time**
