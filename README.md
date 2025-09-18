@@ -260,30 +260,9 @@ npm start
 - [Database Design](docs/database/schema.sql)
 - [User Manual](docs/user/manual.pdf)
 
-## 🤝 Contributing
-
-1. Fork repository
-2. Buat feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to branch (`git push origin feature/AmazingFeature`)
-5. Open Pull Request
-
 ## 🔄 Changelog
 
 ### v1.0.0 (2025-01-15)
-- Initial release
-- Basic anomaly detection
-- Web dashboard implementation
-- STM32-ESP8266 integration
-
-## 🔮 Roadmap
-
-- [ ] Mobile application (React Native)
-- [ ] Multi-device support
-- [ ] Advanced analytics with ML
-- [ ] Telegram/WhatsApp notifications
-- [ ] Energy optimization suggestions
-
----
+- Web dashboard UI implementation
 
 **⚡ GUARD System - Protecting Your Home, One Anomaly at a Time**
