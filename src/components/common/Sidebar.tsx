@@ -76,9 +76,9 @@ const Sidebar: React.FC<SidebarProps> = ({
     <button
       onClick={item.onClick}
       className={`flex items-center w-full px-4 py-2 mb-2 rounded-lg transition-colors ${
-        item.active 
-          ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600' 
-          : 'text-gray-700 hover:bg-gray-100'
+        item.active
+          ? 'bg-blue-50 dark:bg-blue-900 text-blue-600 dark:text-blue-400 border-r-2 border-blue-600 dark:border-blue-400'
+          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
       }`}
     >
       {item.icon}
@@ -97,12 +97,12 @@ const Sidebar: React.FC<SidebarProps> = ({
       )}
 
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform ${
+      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-800 shadow-lg transform ${
         isOpen ? 'translate-x-0' : '-translate-x-full'
-      } transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0`}>
+      } transition-transform duration-300 ease-in-out lg:translate-x-0`}>
         
         {/* Header */}
-        <div className="flex items-center justify-between h-16 px-6 bg-blue-600">
+        <div className="flex items-center justify-between h-16 px-6 bg-blue-600 dark:bg-blue-700">
           <div className="flex items-center space-x-2">
             <Shield className="h-8 w-8 text-white" />
             <span className="text-xl font-bold text-white">Guard</span>
@@ -137,7 +137,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             {/* Logout Button */}
             <button
               onClick={onLogout}
-              className="flex items-center w-full px-4 py-2 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
+              className="flex items-center w-full px-4 py-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
             >
               <LogOut className="h-5 w-5" />
               <span className="ml-3">Sign Out</span>

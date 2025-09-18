@@ -7,6 +7,8 @@ import StatsCard from '../components/dashboard/Statscard';
 import EnergyCard from '../components/dashboard/EnergyCard';
 import AnomalyCalendar from '../components/dashboard/AnomalyCalendar';
 import EnergyChart from '../components/dashboard/EnergyChart';
+import Settings from '../components/dashboard/Settings';
+import Profile from '../components/dashboard/Profile';
 import { 
   Power, 
   AlertTriangle, 
@@ -165,7 +167,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex">
       {/* Sidebar */}
       <Sidebar
         isOpen={sidebarOpen}
@@ -176,7 +178,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
       />
 
       {/* Main Content */}
-      <div className="flex-1 lg:ml-0">
+      <div className="flex-1 lg:ml-64">
         {/* Navbar */}
         <Navbar
           onMenuClick={() => setSidebarOpen(true)}
@@ -448,6 +450,12 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
                 </div>
               </div>
             </div>
+          ) : currentView === 'settings' ? (
+            // SETTINGS VIEW
+            <Settings />
+          ) : currentView === 'profile' ? (
+            // PROFILE VIEW
+            <Profile />
           ) : (
             // OTHER VIEWS PLACEHOLDER
             <div className="bg-white rounded-lg p-8 shadow-sm border text-center">
