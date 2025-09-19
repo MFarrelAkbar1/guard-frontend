@@ -2,21 +2,10 @@ import React, { useState } from 'react';
 import { Power, AlertTriangle, CheckCircle, Wifi, WifiOff } from 'lucide-react';
 import Button from '../common/Button';
 import { ConfirmModal } from '../common/Modal';
-
-interface Device {
-  id: string;
-  name: string;
-  percentage: number;
-  status: 'online' | 'offline' | 'warning' | 'error';
-  power: number; // watts
-  voltage: number; // volts
-  current: number; // amperes
-  lastUpdate: string;
-  location?: string;
-}
+import { DeviceWithStats } from '../../types/database';
 
 interface EnergyCardProps {
-  device: Device;
+  device: DeviceWithStats;
   onControlDevice?: (deviceId: string, action: 'disconnect' | 'reconnect') => void;
   className?: string;
 }
@@ -120,39 +109,27 @@ const EnergyCard: React.FC<EnergyCardProps> = ({
 
       {/* Main Metrics */}
       <div className="mb-4">
-        {/* Percentage Display */}
+        {/* Latest Power Reading */}
         <div className="flex items-end gap-2 mb-2">
           <span className="text-3xl font-bold text-gray-900">
-            {device.percentage}%
+            {device.latest_power?.toFixed(1) || '--'}W
           </span>
-          <span className="text-sm text-gray-500 mb-1">efficiency</span>
+          <span className="text-sm text-gray-500 mb-1">current consumption</span>
         </div>
 
-        {/* Progress Bar */}
-        <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
-          <div 
-            className={`h-2 rounded-full transition-all duration-500 ${
-              device.percentage >= 80 ? 'bg-green-500' :
-              device.percentage >= 60 ? 'bg-yellow-500' :
-              'bg-red-500'
-            }`}
-            style={{ width: `${device.percentage}%` }}
-          />
-        </div>
-
-        {/* Electrical Metrics */}
-        <div className="grid grid-cols-3 gap-2 text-sm">
-          <div className="text-center">
-            <div className="text-gray-500">Power</div>
-            <div className="font-medium text-gray-900">{device.power}W</div>
+        {/* Data Points Today */}
+        <div className="grid grid-cols-2 gap-4 text-sm mb-3">
+          <div className="text-center bg-white/50 rounded p-2">
+            <div className="text-gray-500">Data Points Today</div>
+            <div className="font-medium text-gray-900">{device.total_data_points_today || 0}</div>
           </div>
-          <div className="text-center">
-            <div className="text-gray-500">Voltage</div>
-            <div className="font-medium text-gray-900">{device.voltage}V</div>
-          </div>
-          <div className="text-center">
-            <div className="text-gray-500">Current</div>
-            <div className="font-medium text-gray-900">{device.current}A</div>
+          <div className="text-center bg-white/50 rounded p-2">
+            <div className="text-gray-500">Anomalies Today</div>
+            <div className={`font-medium ${
+              (device.anomaly_count_today || 0) > 0 ? 'text-red-600' : 'text-green-600'
+            }`}>
+              {device.anomaly_count_today || 0}
+            </div>
           </div>
         </div>
       </div>
@@ -194,7 +171,7 @@ const EnergyCard: React.FC<EnergyCardProps> = ({
 
       {/* Last Update */}
       <div className="text-xs text-gray-500 text-center">
-        Last update: {formatLastUpdate(device.lastUpdate)}
+        Last update: {device.latest_timestamp ? formatLastUpdate(device.latest_timestamp) : 'No data'}
       </div>
 
       {/* Device Image/Icon */}

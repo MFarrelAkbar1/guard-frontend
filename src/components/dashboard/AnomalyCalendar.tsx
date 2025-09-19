@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
-
-interface AnomalyData {
-  count: number;
-  severity: 'low' | 'medium' | 'high' | 'critical';
-}
+import { CalendarDayData } from '../../types/database';
 
 interface AnomalyCalendarProps {
   className?: string;
   onDateClick?: (date: Date) => void;
+  calendarData?: CalendarDayData[]; // Optional prop for real data
+  deviceId?: string; // For filtering data by device
 }
 
-const AnomalyCalendar: React.FC<AnomalyCalendarProps> = ({ 
-  className = '', 
-  onDateClick 
+const AnomalyCalendar: React.FC<AnomalyCalendarProps> = ({
+  className = '',
+  onDateClick,
+  calendarData = [],
+  deviceId
 }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
@@ -24,20 +24,31 @@ const AnomalyCalendar: React.FC<AnomalyCalendarProps> = ({
 
   const dayHeaders = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
-  // Mock anomaly data
-  const getAnomalyData = (day: number): AnomalyData | null => {
-    const anomalies: Record<number, AnomalyData> = {
-      1: { count: 1, severity: 'high' },
-      2: { count: 2, severity: 'critical' },
-      4: { count: 1, severity: 'critical' },
-      9: { count: 1, severity: 'medium' },
-      10: { count: 1, severity: 'high' },
-      11: { count: 1, severity: 'critical' },
-      15: { count: 1, severity: 'low' },
-      18: { count: 2, severity: 'medium' },
-      22: { count: 1, severity: 'high' }
+  // Get real or mock anomaly data for a specific day
+  const getCalendarDayData = (day: number): CalendarDayData | null => {
+    const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+    // Use real data if available
+    const realData = calendarData.find(data => data.date === dateStr);
+    if (realData) {
+      return realData;
+    }
+
+    // Fallback to mock data for demo
+    const mockAnomalies: Record<number, Omit<CalendarDayData, 'date'>> = {
+      1: { total_data_points: 144, anomaly_count: 1, max_severity: 'high', has_data: true },
+      2: { total_data_points: 142, anomaly_count: 2, max_severity: 'critical', has_data: true },
+      4: { total_data_points: 140, anomaly_count: 1, max_severity: 'critical', has_data: true },
+      9: { total_data_points: 145, anomaly_count: 1, max_severity: 'medium', has_data: true },
+      10: { total_data_points: 143, anomaly_count: 1, max_severity: 'high', has_data: true },
+      11: { total_data_points: 141, anomaly_count: 1, max_severity: 'critical', has_data: true },
+      15: { total_data_points: 144, anomaly_count: 1, max_severity: 'low', has_data: true },
+      18: { total_data_points: 142, anomaly_count: 2, max_severity: 'medium', has_data: true },
+      22: { total_data_points: 143, anomaly_count: 1, max_severity: 'high', has_data: true }
     };
-    return anomalies[day] || null;
+
+    const mockData = mockAnomalies[day];
+    return mockData ? { date: dateStr, ...mockData } : null;
   };
 
   // Generate calendar days
@@ -98,8 +109,8 @@ const AnomalyCalendar: React.FC<AnomalyCalendarProps> = ({
   const totalAnomalies = getDaysInMonth()
     .filter(day => day !== null)
     .reduce((total: number, day) => {
-      const anomaly = getAnomalyData(day as number);
-      return total + (anomaly?.count || 0);
+      const dayData = getCalendarDayData(day as number);
+      return total + (dayData?.anomaly_count || 0);
     }, 0);
 
   return (
@@ -156,30 +167,45 @@ const AnomalyCalendar: React.FC<AnomalyCalendarProps> = ({
             return <div key={index} className="p-2"></div>;
           }
           
-          const anomaly = getAnomalyData(day);
+          const dayData = getCalendarDayData(day);
           const today = new Date();
-          const isToday = 
+          const isToday =
             today.getDate() === day &&
             today.getMonth() === currentMonth.getMonth() &&
             today.getFullYear() === currentMonth.getFullYear();
-          
+
           return (
-            <div 
-              key={day} 
+            <div
+              key={day}
               className={`relative p-2 hover:bg-gray-50 rounded cursor-pointer transition-colors ${
                 isToday ? 'bg-blue-50 text-blue-600 font-medium' : ''
-              }`}
+              } ${!dayData?.has_data ? 'opacity-50' : ''}`}
               onClick={() => handleDateClick(day)}
+              title={dayData ?
+                `${dayData.total_data_points} data points, ${dayData.anomaly_count} anomalies` :
+                'No data available'
+              }
             >
               <span className="text-sm">{day}</span>
-              
+
+              {/* Data availability indicator */}
+              {dayData?.has_data && (
+                <div className="absolute bottom-0 left-0 right-0 flex justify-center">
+                  <div className="w-1 h-1 bg-blue-400 rounded-full" />
+                </div>
+              )}
+
               {/* Anomaly Indicator */}
-              {anomaly && (
-                <div className="absolute top-0 right-0">
-                  <div 
-                    className={`w-2 h-2 rounded-full ${getSeverityColor(anomaly.severity)}`}
-                    title={`${anomaly.count} anomaly (${anomaly.severity})`}
+              {dayData?.anomaly_count && dayData.anomaly_count > 0 && dayData.max_severity && (
+                <div className="absolute top-0 right-0 flex items-center">
+                  <div
+                    className={`w-2 h-2 rounded-full ${getSeverityColor(dayData.max_severity)}`}
                   />
+                  {dayData.anomaly_count > 1 && (
+                    <span className="text-xs font-bold text-red-600 ml-1">
+                      {dayData.anomaly_count}
+                    </span>
+                  )}
                 </div>
               )}
             </div>

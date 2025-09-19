@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import { Shield } from 'lucide-react';
 import LoginForm from '../components/forms/LoginForm';
+import SignUpForm from '../components/forms/SignUpForm';
+import { useAuth } from '../contexts/AuthContext';
 import { FullPageLoading } from '../components/common/Loading';
-
-interface LoginPageProps {
-  onLogin: () => void;
-}
 
 interface LoginFormData {
   email: string;
@@ -13,31 +11,46 @@ interface LoginFormData {
   rememberMe: boolean;
 }
 
-const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
-  const [loading, setLoading] = useState(false);
+interface SignUpFormData {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
+
+const LoginPage: React.FC = () => {
   const [error, setError] = useState<string>('');
+  const [showSignUp, setShowSignUp] = useState(false);
+  const { signIn, signUp, loading } = useAuth();
 
   const handleLogin = async (formData: LoginFormData) => {
-    setLoading(true);
     setError('');
-    
+
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Simple validation - in real app, this would be server-side
-      if (formData.email === 'admin@guard.com' && formData.password === 'password123') {
-        onLogin();
-      } else if (formData.email && formData.password) {
-        // Allow any email/password for demo
-        onLogin();
-      } else {
-        throw new Error('Invalid credentials');
-      }
+      await signIn(formData.email, formData.password);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed. Please try again.');
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  const handleSignUp = async (formData: SignUpFormData) => {
+    setError('');
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    try {
+      await signUp(formData.email, formData.password, formData.name);
+      setError('Account created successfully! You can now sign in.');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Sign up failed. Please try again.';
+      if (errorMessage.includes('User already registered')) {
+        setError('This email is already registered. Please try signing in instead.');
+      } else {
+        setError(errorMessage);
+      }
     }
   };
 
@@ -56,15 +69,41 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             </div>
             <h1 className="text-3xl font-bold text-gray-900">GUARD</h1>
             <p className="text-gray-600 mt-2">Grid Usage Anomaly Recognition</p>
-            <p className="text-sm text-gray-500 mt-1">Sign in to your account</p>
+            <p className="text-sm text-gray-500 mt-1">
+              {showSignUp ? 'Create your account' : 'Sign in to your account'}
+            </p>
           </div>
 
-          {/* Login Form */}
-          <LoginForm
-            onSubmit={handleLogin}
-            loading={loading}
-            error={error}
-          />
+          {/* Form */}
+          {showSignUp ? (
+            <SignUpForm
+              onSubmit={handleSignUp}
+              loading={loading}
+              error={error}
+            />
+          ) : (
+            <LoginForm
+              onSubmit={handleLogin}
+              loading={loading}
+              error={error}
+            />
+          )}
+
+          {/* Toggle Form */}
+          <div className="mt-6 text-center">
+            <button
+              type="button"
+              onClick={() => {
+                setShowSignUp(!showSignUp);
+                setError('');
+              }}
+              className="text-blue-600 hover:text-blue-500 text-sm"
+            >
+              {showSignUp
+                ? 'Already have an account? Sign in'
+                : "Don't have an account? Sign up"}
+            </button>
+          </div>
 
           {/* Features Section */}
           <div className="mt-8 pt-6 border-t border-gray-200">
@@ -76,7 +115,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                   <p className="text-sm text-gray-600">24/7 anomaly detection system</p>
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-3">
                 <span className="text-2xl">⚡</span>
                 <div>
@@ -84,7 +123,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                   <p className="text-sm text-gray-600">Automatic power disconnection</p>
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-3">
                 <span className="text-2xl">📊</span>
                 <div>
@@ -93,17 +132,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                 </div>
               </div>
             </div>
-
-          </div>
-
-          {/* Demo Credentials */}
-          <div className="mt-6 p-3 bg-gray-50 rounded-lg">
-            <p className="text-xs text-gray-600 text-center">
-              <strong>Demo:</strong> Gunakan email dan password sembarang untuk masuk
-            </p>
           </div>
         </div>
-        
       </div>
     </div>
   );

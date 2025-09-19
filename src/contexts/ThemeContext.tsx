@@ -15,11 +15,15 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   useEffect(() => {
     localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+    console.log('Theme changed:', isDarkMode ? 'dark' : 'light');
     if (isDarkMode) {
-      document.documentElement.classList.add('dark');
+      document.body.classList.add('dark-theme');
+      console.log('Added dark-theme class to body element');
     } else {
-      document.documentElement.classList.remove('dark');
+      document.body.classList.remove('dark-theme');
+      console.log('Removed dark-theme class from body element');
     }
+    console.log('Body classes:', document.body.className);
   }, [isDarkMode]);
 
   const toggleTheme = () => {

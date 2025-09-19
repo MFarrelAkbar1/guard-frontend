@@ -43,25 +43,29 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
   const devices = [
     {
       id: 'NR-BB332Q-PK-1',
+      user_id: 'mock-user-id',
       name: 'Kulkas NR-BB332Q-PK-1',
-      percentage: 97,
+      location: 'Kitchen Area',
       status: 'online' as const,
-      power: 149.94,
-      voltage: 220.5,
-      current: 0.68,
-      lastUpdate: new Date().toISOString(),
-      location: 'Kitchen Area'
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      latest_power: 149.94,
+      latest_timestamp: new Date().toISOString(),
+      anomaly_count_today: 0,
+      total_data_points_today: 144
     },
     {
-      id: 'NR-BB332Q-PK-2', 
+      id: 'NR-BB332Q-PK-2',
+      user_id: 'mock-user-id',
       name: 'Kulkas NR-BB332Q-PK-2',
-      percentage: 62,
+      location: 'Storage Room',
       status: 'warning' as const,
-      power: 95.86,
-      voltage: 218.3,
-      current: 0.44,
-      lastUpdate: new Date(Date.now() - 5 * 60 * 1000).toISOString(), // 5 minutes ago
-      location: 'Storage Room'
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      latest_power: 95.86,
+      latest_timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(), // 5 minutes ago
+      anomaly_count_today: 2,
+      total_data_points_today: 142
     }
   ];
 
@@ -167,7 +171,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex">
+    <div className="min-h-screen theme-bg-secondary flex">
       {/* Sidebar */}
       <Sidebar
         isOpen={sidebarOpen}

@@ -1,28 +1,34 @@
-import React, { useState } from 'react';
+import React from 'react';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { FullPageLoading } from './components/common/Loading';
 
-function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+function AppContent() {
+  const { user, loading, signOut } = useAuth();
 
-  const handleLogin = () => {
-    setIsLoggedIn(true);
-  };
-
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-  };
+  if (loading) {
+    return <FullPageLoading text="Loading..." />;
+  }
 
   return (
+    <div className="App">
+      {user ? (
+        <DashboardPage onLogout={signOut} />
+      ) : (
+        <LoginPage />
+      )}
+    </div>
+  );
+}
+
+function App() {
+  return (
     <ThemeProvider>
-      <div className="App">
-        {isLoggedIn ? (
-          <DashboardPage onLogout={handleLogout} />
-        ) : (
-          <LoginPage onLogin={handleLogin} />
-        )}
-      </div>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
     </ThemeProvider>
   );
 }

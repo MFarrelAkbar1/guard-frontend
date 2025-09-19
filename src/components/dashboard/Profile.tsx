@@ -92,26 +92,26 @@ const Profile: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border dark:border-gray-700">
+      <div className="theme-card rounded-lg p-6">
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
             <User className="h-8 w-8 text-blue-600 dark:text-blue-400" />
           </div>
           <div>
-            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Profile Settings</h1>
-            <p className="text-gray-500 dark:text-gray-400 mt-1">Manage your personal information and security</p>
+            <h1 className="text-xl font-semibold theme-text-primary">Profile Settings</h1>
+            <p className="theme-text-secondary mt-1">Manage your personal information and security</p>
           </div>
         </div>
       </div>
 
       {/* Personal Information */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border dark:border-gray-700">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Personal Information</h2>
+      <div className="theme-card rounded-lg p-6">
+        <h2 className="text-lg font-semibold theme-text-primary mb-6">Personal Information</h2>
 
         <div className="space-y-6">
           {/* Name Field */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium theme-text-primary mb-2">
               Full Name
             </label>
             <div className="flex items-center gap-3">
@@ -121,7 +121,7 @@ const Profile: React.FC = () => {
                     type="text"
                     value={profileData.name}
                     onChange={(e) => setProfileData(prev => ({ ...prev, name: e.target.value }))}
-                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                    className="flex-1 px-3 py-2 rounded-md shadow-sm theme-input"
                     placeholder="Enter your full name"
                   />
                   <Button
@@ -143,7 +143,7 @@ const Profile: React.FC = () => {
                 </div>
               ) : (
                 <div className="flex-1 flex items-center justify-between">
-                  <span className="text-gray-900 dark:text-white font-medium">{profileData.name}</span>
+                  <span className="theme-text-primary font-medium">{profileData.name}</span>
                   <Button
                     variant="outline"
                     size="sm"
@@ -159,19 +159,19 @@ const Profile: React.FC = () => {
 
           {/* Email Field (Read-only) */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium theme-text-primary mb-2">
               Email Address
             </label>
             <div className="flex items-center gap-3">
               <div className="flex-1 flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md">
                 <Mail className="h-4 w-4 text-gray-400" />
-                <span className="text-gray-600 dark:text-gray-300">{profileData.email}</span>
+                <span className="theme-text-secondary">{profileData.email}</span>
               </div>
-              <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-600 px-2 py-1 rounded">
+              <span className="text-xs theme-text-secondary bg-gray-100 dark:bg-gray-600 px-2 py-1 rounded">
                 Not editable
               </span>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-xs theme-text-secondary mt-1">
               Contact support to change your email address
             </p>
           </div>
@@ -179,9 +179,9 @@ const Profile: React.FC = () => {
       </div>
 
       {/* Security Settings */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border dark:border-gray-700">
+      <div className="theme-card rounded-lg p-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Security</h2>
+          <h2 className="text-lg font-semibold theme-text-primary">Security</h2>
           {!isChangingPassword && (
             <Button
               variant="outline"
@@ -198,7 +198,7 @@ const Profile: React.FC = () => {
           <div className="space-y-4">
             {/* Current Password */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium theme-text-primary mb-2">
                 Current Password
               </label>
               <div className="relative">
@@ -206,7 +206,7 @@ const Profile: React.FC = () => {
                   type={showPasswords.current ? 'text' : 'password'}
                   value={profileData.currentPassword}
                   onChange={(e) => setProfileData(prev => ({ ...prev, currentPassword: e.target.value }))}
-                  className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                  className="w-full px-3 py-2 pr-10 rounded-md shadow-sm theme-input"
                   placeholder="Enter current password"
                 />
                 <button
@@ -225,7 +225,7 @@ const Profile: React.FC = () => {
 
             {/* New Password */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium theme-text-primary mb-2">
                 New Password
               </label>
               <div className="relative">
@@ -233,7 +233,7 @@ const Profile: React.FC = () => {
                   type={showPasswords.new ? 'text' : 'password'}
                   value={profileData.newPassword}
                   onChange={(e) => setProfileData(prev => ({ ...prev, newPassword: e.target.value }))}
-                  className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                  className="w-full px-3 py-2 pr-10 rounded-md shadow-sm theme-input"
                   placeholder="Enter new password"
                 />
                 <button
@@ -248,14 +248,14 @@ const Profile: React.FC = () => {
                   )}
                 </button>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-xs theme-text-secondary mt-1">
                 Must be at least 8 characters long
               </p>
             </div>
 
             {/* Confirm Password */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium theme-text-primary mb-2">
                 Confirm New Password
               </label>
               <div className="relative">
@@ -263,7 +263,7 @@ const Profile: React.FC = () => {
                   type={showPasswords.confirm ? 'text' : 'password'}
                   value={profileData.confirmPassword}
                   onChange={(e) => setProfileData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                  className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                  className="w-full px-3 py-2 pr-10 rounded-md shadow-sm theme-input"
                   placeholder="Confirm new password"
                 />
                 <button
@@ -303,7 +303,7 @@ const Profile: React.FC = () => {
             <p className="text-gray-600 dark:text-gray-400">
               Password last changed: <span className="font-medium">March 15, 2024</span>
             </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+            <p className="text-sm theme-text-secondary mt-2">
               For security reasons, we recommend changing your password regularly.
             </p>
           </div>
@@ -311,21 +311,21 @@ const Profile: React.FC = () => {
       </div>
 
       {/* Account Statistics */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border dark:border-gray-700">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Account Information</h2>
+      <div className="theme-card rounded-lg p-6">
+        <h2 className="text-lg font-semibold theme-text-primary mb-4">Account Information</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="text-center">
             <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">2</div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">Devices Connected</div>
+            <div className="text-sm theme-text-secondary">Devices Connected</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-green-600 dark:text-green-400">97%</div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">System Uptime</div>
+            <div className="text-sm theme-text-secondary">System Uptime</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">45</div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">Days Active</div>
+            <div className="text-sm theme-text-secondary">Days Active</div>
           </div>
         </div>
       </div>
