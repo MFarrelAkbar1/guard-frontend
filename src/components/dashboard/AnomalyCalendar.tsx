@@ -85,7 +85,6 @@ const AnomalyCalendar: React.FC<AnomalyCalendarProps> = ({
     }
   };
 
-  // Get severity color
   const getSeverityColor = (severity: string): string => {
     switch (severity) {
       case 'low': return 'bg-green-500';
@@ -96,7 +95,6 @@ const AnomalyCalendar: React.FC<AnomalyCalendarProps> = ({
     }
   };
 
-  // Calculate total anomalies this month
   const totalAnomalies = getDaysInMonth()
     .filter(day => day !== null)
     .reduce((total: number, day) => {

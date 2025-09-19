@@ -4,7 +4,7 @@
 - **Leader Supervisor**: [Sakti Cahya Buana]
 - **Web Developer**: [Muhammad Farrel Akbar, Sakti Cahya Buana]
 - **Instrument Technician**: [Stasya Adelia, Christy Clarrimond Kewas, Ahmad Maydanul Ilmi]
-- **Institution**: [Gadjah Mada University, Indonesia]
+- **Institution**: [Universitas Gadjah Mada, Indonesia]
 
 ## 📋 Deskripsi Proyek
 
