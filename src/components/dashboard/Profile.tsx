@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Mail, Lock, Edit3, Save, X, Eye, EyeOff } from 'lucide-react';
 import Button from '../common/Button';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface ProfileData {
   name: string;
@@ -11,13 +12,25 @@ interface ProfileData {
 }
 
 const Profile: React.FC = () => {
+  const { user, updateProfile, updatePassword } = useAuth();
   const [profileData, setProfileData] = useState<ProfileData>({
-    name: 'Margaret',
-    email: 'margarettary@gmail.com',
+    name: user?.user_metadata?.name || 'User',
+    email: user?.email || '',
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
+
+  // Update profile data when user changes
+  useEffect(() => {
+    if (user) {
+      setProfileData(prev => ({
+        ...prev,
+        name: user.user_metadata?.name || 'User',
+        email: user.email || ''
+      }));
+    }
+  }, [user]);
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -32,22 +45,36 @@ const Profile: React.FC = () => {
     setIsEditingName(true);
   };
 
-  const handleNameSave = () => {
+  const handleNameSave = async () => {
+    if (!profileData.name.trim()) {
+      alert('Name cannot be empty');
+      return;
+    }
+
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      await updateProfile(profileData.name.trim());
       setIsEditingName(false);
+      // Profile data will be automatically updated through the useEffect when user changes
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Failed to update name. Please try again.');
+      // Reset to original name on error
+      setProfileData(prev => ({ ...prev, name: user?.user_metadata?.name || 'User' }));
+    } finally {
       setLoading(false);
-      // Show success message
-    }, 1000);
+    }
   };
 
   const handleNameCancel = () => {
-    setProfileData(prev => ({ ...prev, name: 'Margaret' })); // Reset to original
+    setProfileData(prev => ({ ...prev, name: user?.user_metadata?.name || 'User' })); // Reset to original
     setIsEditingName(false);
   };
 
-  const handlePasswordChange = () => {
+  const handlePasswordChange = async () => {
+    if (!profileData.currentPassword) {
+      alert('Please enter your current password');
+      return;
+    }
     if (profileData.newPassword !== profileData.confirmPassword) {
       alert('New passwords do not match');
       return;
@@ -58,8 +85,8 @@ const Profile: React.FC = () => {
     }
 
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      await updatePassword(profileData.currentPassword, profileData.newPassword);
       setIsChangingPassword(false);
       setProfileData(prev => ({
         ...prev,
@@ -67,9 +94,12 @@ const Profile: React.FC = () => {
         newPassword: '',
         confirmPassword: ''
       }));
+      alert('Password updated successfully!');
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Failed to update password. Please try again.');
+    } finally {
       setLoading(false);
-      // Show success message
-    }, 1000);
+    }
   };
 
   const handlePasswordCancel = () => {

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Sidebar from '../components/common/Sidebar';
 import Navbar from '../components/common/Navbar';
+import { useAuth } from '../contexts/AuthContext';
 import { ConfirmModal } from '../components/common/Modal';
 import Button from '../components/common/Button';
 import StatsCard from '../components/dashboard/Statscard';
@@ -9,6 +10,7 @@ import AnomalyCalendar from '../components/dashboard/AnomalyCalendar';
 import EnergyChart from '../components/dashboard/EnergyChart';
 import Settings from '../components/dashboard/Settings';
 import Profile from '../components/dashboard/Profile';
+import Help from '../components/dashboard/Help';
 import { 
   Power, 
   AlertTriangle, 
@@ -27,10 +29,21 @@ interface DashboardPageProps {
 }
 
 const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
+  const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentView, setCurrentView] = useState('dashboard');
   const [loading, setLoading] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  // Filter and export states for anomaly log
+  const [showFilter, setShowFilter] = useState(false);
+  const [severityFilter, setSeverityFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+
+  // Get user data from auth context
+  const userName = user?.user_metadata?.name || 'User';
+  const userEmail = user?.email || '';
+  const userId = user?.id || 'anonymous';
 
   // Mock data
   const statsData = {
@@ -43,7 +56,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
   const devices = [
     {
       id: 'NR-BB332Q-PK-1',
-      user_id: 'mock-user-id',
+      user_id: userId,
       name: 'Kulkas NR-BB332Q-PK-1',
       location: 'Kitchen Area',
       status: 'online' as const,
@@ -56,7 +69,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
     },
     {
       id: 'NR-BB332Q-PK-2',
-      user_id: 'mock-user-id',
+      user_id: userId,
       name: 'Kulkas NR-BB332Q-PK-2',
       location: 'Storage Room',
       status: 'warning' as const,
@@ -155,19 +168,57 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('id-ID', {
       day: '2-digit',
-      month: '2-digit', 
+      month: '2-digit',
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
     });
   };
 
+  // Filter anomaly logs
+  const filteredAnomalyLogs = anomalyLogs.filter(log => {
+    if (severityFilter !== 'all' && log.severity !== severityFilter) {
+      return false;
+    }
+    if (statusFilter !== 'all' && log.status !== statusFilter) {
+      return false;
+    }
+    return true;
+  });
+
+  // Export functionality
+  const handleExport = () => {
+    const csvContent = [
+      ['ID', 'Device', 'Type', 'Date', 'Severity', 'Status', 'Description'],
+      ...filteredAnomalyLogs.map(log => [
+        log.id,
+        log.device,
+        log.type,
+        log.date,
+        log.severity,
+        log.status,
+        log.description
+      ])
+    ];
+
+    const csvString = csvContent.map(row => row.join(',')).join('\n');
+    const blob = new Blob([csvString], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `anomaly-log-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   // Calculate anomaly stats
   const anomalyStats = {
-    total: anomalyLogs.length,
-    resolved: anomalyLogs.filter(log => log.status === 'resolved').length,
-    active: anomalyLogs.filter(log => log.status === 'active').length,
-    critical: anomalyLogs.filter(log => log.severity === 'critical').length
+    total: filteredAnomalyLogs.length,
+    resolved: filteredAnomalyLogs.filter(log => log.status === 'resolved').length,
+    active: filteredAnomalyLogs.filter(log => log.status === 'active').length,
+    critical: filteredAnomalyLogs.filter(log => log.severity === 'critical').length
   };
 
   return (
@@ -188,8 +239,9 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
           onMenuClick={() => setSidebarOpen(true)}
           currentView={currentView}
           onLogout={handleLogout}
-          userName="Margaret"
-          userEmail="margarettary@gmail.com"
+          userName={userName}
+          userEmail={userEmail}
+          onViewChange={setCurrentView}
         />
 
         {/* Page Content */}
@@ -205,8 +257,8 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
                       <User className="h-6 w-6 text-blue-600" />
                     </div>
                     <div>
-                      <h1 className="text-xl font-semibold text-gray-900">Selamat Pagi, Margaret</h1>
-                      <p className="text-gray-500">margarettary@gmail.com</p>
+                      <h1 className="text-xl font-semibold text-gray-900">Selamat Pagi, {userName}</h1>
+                      <p className="text-gray-500">{userEmail}</p>
                       <p className="text-sm text-gray-400 mt-1">Last login: Today, 08:30 AM</p>
                     </div>
                   </div>
@@ -282,15 +334,11 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {/* Energy Management Cards */}
                 <div className="xl:col-span-2 space-y-4">
-                  <div className="flex items-center justify-between">
+                  <div>
                     <h2 className="text-lg font-semibold text-gray-900 flex items-center">
                       <Power className="h-5 w-5 mr-2" />
                       Manajemen Energi
                     </h2>
-                    <Button variant="outline" size="sm">
-                      <Activity className="h-4 w-4 mr-2" />
-                      View All Devices
-                    </Button>
                   </div>
                   
                   <div className="grid gap-4">
@@ -301,22 +349,6 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
                         onControlDevice={handleDeviceControl}
                       />
                     ))}
-                  </div>
-                  
-                  {/* Quick Actions */}
-                  <div className="bg-white rounded-lg p-4 shadow-sm border">
-                    <h3 className="font-medium text-gray-900 mb-3">Quick Actions</h3>
-                    <div className="flex flex-wrap gap-2">
-                      <Button variant="outline" size="sm">
-                        Export Report
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        Schedule Maintenance
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        System Settings
-                      </Button>
-                    </div>
                   </div>
                 </div>
 
@@ -344,16 +376,79 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
                     <p className="text-gray-500 mt-1">Track and monitor all system anomalies</p>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
-                      <Filter className="h-4 w-4 mr-2" />
-                      Filter
-                    </Button>
-                    <Button variant="outline" size="sm">
+                    <div className="relative">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowFilter(!showFilter)}
+                      >
+                        <Filter className="h-4 w-4 mr-2" />
+                        Filter
+                      </Button>
+
+                      {showFilter && (
+                        <div className="absolute top-full right-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-10 p-4">
+                          <div className="space-y-3">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Severity
+                              </label>
+                              <select
+                                value={severityFilter}
+                                onChange={(e) => setSeverityFilter(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              >
+                                <option value="all">All Severity</option>
+                                <option value="low">Low</option>
+                                <option value="medium">Medium</option>
+                                <option value="high">High</option>
+                                <option value="critical">Critical</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Status
+                              </label>
+                              <select
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              >
+                                <option value="all">All Status</option>
+                                <option value="active">Active</option>
+                                <option value="resolved">Resolved</option>
+                              </select>
+                            </div>
+                            <div className="flex gap-2 pt-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setSeverityFilter('all');
+                                  setStatusFilter('all');
+                                }}
+                              >
+                                Clear
+                              </Button>
+                              <Button
+                                variant="primary"
+                                size="sm"
+                                onClick={() => setShowFilter(false)}
+                              >
+                                Apply
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleExport}
+                    >
                       <Download className="h-4 w-4 mr-2" />
                       Export
-                    </Button>
-                    <Button variant="primary" size="sm">
-                      New Report
                     </Button>
                   </div>
                 </div>
@@ -399,14 +494,10 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
                 </div>
                 
                 <div className="divide-y divide-gray-200">
-                  {anomalyLogs.map((log, index) => (
+                  {filteredAnomalyLogs.map((log, index) => (
                     <div key={log.id} className={`p-6 hover:bg-gray-50 transition-colors ${index === 0 ? 'bg-blue-50' : ''}`}>
                       <div className="flex items-start justify-between">
                         <div className="flex items-start space-x-3">
-                          <input 
-                            type="checkbox" 
-                            className="mt-1 rounded border-gray-300 focus:ring-blue-500" 
-                          />
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
                               {getStatusIcon(log.status)}
@@ -421,15 +512,12 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
                             {log.severity.toUpperCase()}
                           </span>
                           <span className={`px-3 py-1 text-sm rounded font-medium ${
-                            log.status === 'resolved' 
+                            log.status === 'resolved'
                               ? 'bg-green-100 text-green-800'
                               : 'bg-red-100 text-red-800'
                           }`}>
                             {log.type}
                           </span>
-                          <Button variant="outline" size="sm">
-                            Details
-                          </Button>
                         </div>
                       </div>
                     </div>
@@ -440,7 +528,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
                 <div className="p-6 border-t bg-gray-50">
                   <div className="flex items-center justify-between">
                     <p className="text-sm text-gray-500">
-                      Showing 1 to {anomalyLogs.length} of {anomalyLogs.length} results
+                      Showing 1 to {filteredAnomalyLogs.length} of {filteredAnomalyLogs.length} results
                     </p>
                     <div className="flex gap-2">
                       <Button variant="outline" size="sm" disabled>
@@ -460,6 +548,9 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
           ) : currentView === 'profile' ? (
             // PROFILE VIEW
             <Profile />
+          ) : currentView === 'help' ? (
+            // HELP VIEW
+            <Help />
           ) : (
             // OTHER VIEWS PLACEHOLDER
             <div className="bg-white rounded-lg p-8 shadow-sm border text-center">

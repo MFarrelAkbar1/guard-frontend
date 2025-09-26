@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Menu, 
   User, 
@@ -15,17 +15,20 @@ interface NavbarProps {
   onLogout: () => void;
   userName?: string;
   userEmail?: string;
+  onViewChange?: (view: string) => void;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ 
-  onMenuClick, 
-  currentView, 
+const Navbar: React.FC<NavbarProps> = ({
+  onMenuClick,
+  currentView,
   onLogout,
   userName = 'Margaret',
-  userEmail = 'margarettary@gmail.com'
+  userEmail = 'margarettary@gmail.com',
+  onViewChange
 }) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [notifications] = useState(3); // Mock notification count
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const getPageTitle = (view: string): string => {
     const titles: Record<string, string> = {
@@ -38,6 +41,23 @@ const Navbar: React.FC<NavbarProps> = ({
     return titles[view] || 'GUARD System';
   };
 
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false);
+      }
+    };
+
+    if (showUserMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showUserMenu]);
+
   const handleUserMenuToggle = () => {
     setShowUserMenu(!showUserMenu);
   };
@@ -45,6 +65,13 @@ const Navbar: React.FC<NavbarProps> = ({
   const handleLogout = () => {
     setShowUserMenu(false);
     onLogout();
+  };
+
+  const handleNotificationClick = () => {
+    if (onViewChange) {
+      onViewChange('anomaly');
+    }
+    setShowUserMenu(false);
   };
 
   return (
@@ -68,30 +95,37 @@ const Navbar: React.FC<NavbarProps> = ({
 
         {/* Right Side */}
         <div className="flex items-center space-x-4">
-          {/* Search (Desktop only) */}
-          <div className="hidden md:flex items-center">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search..."
-                className="pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all w-64"
-              />
+          {/* Search (Desktop only) - Only show in anomaly log */}
+          {currentView === 'anomaly' && (
+            <div className="hidden md:flex items-center">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search anomalies..."
+                  className="pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all w-64"
+                />
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Notifications */}
-          <button className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
-            <Bell className="h-5 w-5" />
-            {notifications > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                {notifications}
-              </span>
-            )}
-          </button>
+          {/* Notifications - Only show on dashboard */}
+          {currentView === 'dashboard' && (
+            <button
+              onClick={handleNotificationClick}
+              className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <Bell className="h-5 w-5" />
+              {notifications > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  {notifications}
+                </span>
+              )}
+            </button>
+          )}
 
           {/* User Menu */}
-          <div className="relative">
+          <div className="relative" ref={menuRef}>
             <button
               onClick={handleUserMenuToggle}
               className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
@@ -151,17 +185,19 @@ const Navbar: React.FC<NavbarProps> = ({
         </div>
       </div>
 
-      {/* Mobile Search */}
-      <div className="md:hidden mt-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search..."
-            className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-          />
+      {/* Mobile Search - Only show in anomaly log */}
+      {currentView === 'anomaly' && (
+        <div className="md:hidden mt-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search anomalies..."
+              className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+            />
+          </div>
         </div>
-      </div>
+      )}
     </header>
   );
 };

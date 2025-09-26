@@ -9,6 +9,8 @@ interface AuthContextType {
   signUp: (email: string, password: string, name: string) => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  updateProfile: (name: string) => Promise<void>;
+  updatePassword: (currentPassword: string, newPassword: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -126,6 +128,55 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const updateProfile = async (name: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: { name: name }
+      });
+      if (error) throw error;
+
+      // Refresh user data to get updated metadata
+      const { data: { user }, error: getUserError } = await supabase.auth.getUser();
+      if (getUserError) throw getUserError;
+      setUser(user);
+    } catch (error) {
+      throw new Error(
+        error instanceof AuthError
+          ? error.message
+          : 'An unexpected error occurred during profile update'
+      );
+    }
+  };
+
+  const updatePassword = async (currentPassword: string, newPassword: string) => {
+    try {
+      // First verify current password by attempting to sign in
+      if (user?.email) {
+        const { error: verifyError } = await supabase.auth.signInWithPassword({
+          email: user.email,
+          password: currentPassword,
+        });
+        if (verifyError) {
+          throw new Error('Current password is incorrect');
+        }
+      }
+
+      // Update password
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      if (error) throw error;
+    } catch (error) {
+      throw new Error(
+        error instanceof AuthError
+          ? error.message
+          : error instanceof Error
+          ? error.message
+          : 'An unexpected error occurred during password update'
+      );
+    }
+  };
+
   const value = {
     user,
     loading,
@@ -133,6 +184,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     signUp,
     signOut,
     resetPassword,
+    updateProfile,
+    updatePassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

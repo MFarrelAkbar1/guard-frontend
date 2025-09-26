@@ -1,10 +1,142 @@
-import React from 'react';
-import { Moon, Sun, Settings as SettingsIcon, Bell, Shield, Database } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Moon, Sun, Settings as SettingsIcon, Bell, Shield, Database, Mail, Check } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useAuth } from '../../contexts/AuthContext';
 import Button from '../common/Button';
+
+interface NotificationSettings {
+  anomalyAlerts: boolean;
+  powerThresholdWarnings: boolean;
+  systemUpdates: boolean;
+  weeklyReports: boolean;
+}
+
+interface UserPreferences {
+  notifications: NotificationSettings;
+  dataRetention: string;
+  sessionTimeout: string;
+}
 
 const Settings: React.FC = () => {
   const { isDarkMode, toggleTheme } = useTheme();
+  const { user } = useAuth();
+  const [hasChanges, setHasChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isTestingEmail, setIsTestingEmail] = useState(false);
+  const [testEmailSent, setTestEmailSent] = useState(false);
+
+  const [preferences, setPreferences] = useState<UserPreferences>({
+    notifications: {
+      anomalyAlerts: true,
+      powerThresholdWarnings: true,
+      systemUpdates: false,
+      weeklyReports: true
+    },
+    dataRetention: '90 days',
+    sessionTimeout: '1 hour'
+  });
+
+  const [originalPreferences, setOriginalPreferences] = useState<UserPreferences>(preferences);
+
+  // Load preferences from localStorage or API on component mount
+  useEffect(() => {
+    const savedPreferences = localStorage.getItem(`user_preferences_${user?.id}`);
+    if (savedPreferences) {
+      const parsed = JSON.parse(savedPreferences);
+      setPreferences(parsed);
+      setOriginalPreferences(parsed);
+    }
+  }, [user?.id]);
+
+  // Check if preferences have changed
+  useEffect(() => {
+    const hasChanged = JSON.stringify(preferences) !== JSON.stringify(originalPreferences);
+    setHasChanges(hasChanged);
+  }, [preferences, originalPreferences]);
+
+  const handleNotificationChange = (key: keyof NotificationSettings) => {
+    setPreferences(prev => ({
+      ...prev,
+      notifications: {
+        ...prev.notifications,
+        [key]: !prev.notifications[key]
+      }
+    }));
+  };
+
+  const handlePreferenceChange = (key: keyof Omit<UserPreferences, 'notifications'>, value: string) => {
+    setPreferences(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  const handleSaveChanges = async () => {
+    setIsSaving(true);
+    try {
+      // Save to localStorage (in a real app, this would be an API call)
+      localStorage.setItem(`user_preferences_${user?.id}`, JSON.stringify(preferences));
+      setOriginalPreferences(preferences);
+
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Show success message (you could use a toast library here)
+      console.log('Preferences saved successfully');
+    } catch (error) {
+      console.error('Failed to save preferences:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleTestEmail = async () => {
+    setIsTestingEmail(true);
+    setTestEmailSent(false);
+
+    try {
+      // Check if we're in development mode
+      if (process.env.REACT_APP_NODE_ENV === 'development') {
+        // Simulate email sending for development
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        console.log(`[DEV] Mock test email sent to ${user?.email}`);
+        alert(`Development Mode: Mock email sent to ${user?.email}\n\nIn production, configure SMTP in Supabase Settings → Auth → SMTP Settings to enable real email notifications.`);
+        setTestEmailSent(true);
+      } else {
+        // In production, you would call your API endpoint that handles email sending
+        // Example using Supabase Functions or your own backend:
+
+        const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/send-test-email`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            to: user?.email,
+            subject: 'GUARD Test Email',
+            message: 'This is a test email from your GUARD system.'
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to send email');
+        }
+
+        console.log(`Test email sent to ${user?.email}`);
+        setTestEmailSent(true);
+      }
+
+      // Reset success message after 3 seconds
+      setTimeout(() => {
+        setTestEmailSent(false);
+      }, 3000);
+    } catch (error) {
+      console.error('Failed to send test email:', error);
+      alert('Failed to send test email. Please check your email configuration.');
+    } finally {
+      setIsTestingEmail(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -50,9 +182,6 @@ const Settings: React.FC = () => {
 
           <div className="pt-2 text-sm theme-text-secondary">
             Current theme: <span className="font-medium">{isDarkMode ? 'Dark' : 'Light'}</span>
-            <div className="mt-2 p-2 rounded bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 text-xs">
-              Debug: isDarkMode = {isDarkMode.toString()}, HTML class should be: {isDarkMode ? 'dark' : 'light'}
-            </div>
           </div>
         </div>
       </div>
@@ -66,10 +195,30 @@ const Settings: React.FC = () => {
 
         <div className="space-y-4">
           {[
-            { label: 'Anomaly Alerts', description: 'Get notified when anomalies are detected', enabled: true },
-            { label: 'Power Threshold Warnings', description: 'Alerts when power consumption exceeds limits', enabled: true },
-            { label: 'System Updates', description: 'Notifications about system updates and maintenance', enabled: false },
-            { label: 'Weekly Reports', description: 'Receive weekly energy consumption reports', enabled: true }
+            {
+              key: 'anomalyAlerts' as keyof NotificationSettings,
+              label: 'Anomaly Alerts',
+              description: 'Get notified via email when anomalies are detected',
+              enabled: preferences.notifications.anomalyAlerts
+            },
+            {
+              key: 'powerThresholdWarnings' as keyof NotificationSettings,
+              label: 'Power Threshold Warnings',
+              description: 'Email alerts when power consumption exceeds limits',
+              enabled: preferences.notifications.powerThresholdWarnings
+            },
+            {
+              key: 'systemUpdates' as keyof NotificationSettings,
+              label: 'System Updates',
+              description: 'Notifications about system updates and maintenance',
+              enabled: preferences.notifications.systemUpdates
+            },
+            {
+              key: 'weeklyReports' as keyof NotificationSettings,
+              label: 'Weekly Reports',
+              description: 'Receive weekly energy consumption reports via email',
+              enabled: preferences.notifications.weeklyReports
+            }
           ].map((item, index) => (
             <div key={index} className="flex items-center justify-between">
               <div>
@@ -77,6 +226,7 @@ const Settings: React.FC = () => {
                 <p className="text-sm theme-text-secondary">{item.description}</p>
               </div>
               <button
+                onClick={() => handleNotificationChange(item.key)}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 ${
                   item.enabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'
                 }`}
@@ -89,6 +239,47 @@ const Settings: React.FC = () => {
               </button>
             </div>
           ))}
+
+          {/* Test Email Section */}
+          <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-medium theme-text-primary">Email Configuration</h3>
+                <p className="text-sm theme-text-secondary">
+                  Test email notifications to: <span className="font-medium">{user?.email}</span>
+                </p>
+                {process.env.REACT_APP_NODE_ENV === 'development' && (
+                  <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                    Development mode: SMTP configuration required for production emails
+                  </p>
+                )}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleTestEmail}
+                disabled={isTestingEmail}
+                className="flex items-center gap-2"
+              >
+                {isTestingEmail ? (
+                  <>
+                    <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                    Sending...
+                  </>
+                ) : testEmailSent ? (
+                  <>
+                    <Check className="h-4 w-4 text-green-600" />
+                    Email Sent!
+                  </>
+                ) : (
+                  <>
+                    <Mail className="h-4 w-4" />
+                    Send Test Email
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -115,7 +306,11 @@ const Settings: React.FC = () => {
               <h3 className="font-medium theme-text-primary">Session Timeout</h3>
               <p className="text-sm theme-text-secondary">Automatically log out after inactivity</p>
             </div>
-            <select className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md px-3 py-1 text-sm">
+            <select
+              value={preferences.sessionTimeout}
+              onChange={(e) => handlePreferenceChange('sessionTimeout', e.target.value)}
+              className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md px-3 py-1 text-sm"
+            >
               <option>30 minutes</option>
               <option>1 hour</option>
               <option>2 hours</option>
@@ -138,7 +333,11 @@ const Settings: React.FC = () => {
               <h3 className="font-medium theme-text-primary">Data Retention</h3>
               <p className="text-sm theme-text-secondary">How long to keep historical data</p>
             </div>
-            <select className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md px-3 py-1 text-sm">
+            <select
+              value={preferences.dataRetention}
+              onChange={(e) => handlePreferenceChange('dataRetention', e.target.value)}
+              className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md px-3 py-1 text-sm"
+            >
               <option>30 days</option>
               <option>90 days</option>
               <option>1 year</option>
@@ -158,12 +357,18 @@ const Settings: React.FC = () => {
         </div>
       </div>
 
-      {/* Save Button */}
-      <div className="flex justify-end">
-        <Button variant="primary">
-          Save Changes
-        </Button>
-      </div>
+      {/* Save Button - Only show when there are changes */}
+      {hasChanges && (
+        <div className="flex justify-end">
+          <Button
+            variant="primary"
+            onClick={handleSaveChanges}
+            disabled={isSaving}
+          >
+            {isSaving ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

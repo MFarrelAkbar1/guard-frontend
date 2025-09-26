@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Mail, Lock, AlertCircle } from 'lucide-react';
+import { User, Mail, Lock, AlertCircle, CheckCircle } from 'lucide-react';
 import { EmailInput, PasswordInput } from './Input';
 import Button from '../common/Button';
 
@@ -14,6 +14,7 @@ interface SignUpFormProps {
   onSubmit: (data: SignUpFormData) => void;
   loading?: boolean;
   error?: string;
+  success?: string;
   className?: string;
 }
 
@@ -21,6 +22,7 @@ const SignUpForm: React.FC<SignUpFormProps> = ({
   onSubmit,
   loading = false,
   error,
+  success,
   className = ''
 }) => {
   const [formData, setFormData] = useState<SignUpFormData>({
@@ -197,6 +199,14 @@ const SignUpForm: React.FC<SignUpFormProps> = ({
         disabled={loading}
         placeholder="Confirm your password"
       />
+
+      {/* Success Message */}
+      {success && (
+        <div className="flex items-center p-3 text-sm text-green-800 bg-green-50 rounded-lg">
+          <CheckCircle className="h-4 w-4 mr-2 flex-shrink-0" />
+          <span>{success}</span>
+        </div>
+      )}
 
       {/* Error Message */}
       {error && (

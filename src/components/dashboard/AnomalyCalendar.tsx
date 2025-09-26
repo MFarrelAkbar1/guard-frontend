@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, ChevronDown } from 'lucide-react';
 import { CalendarDayData } from '../../types/database';
 
 interface AnomalyCalendarProps {
@@ -16,6 +16,8 @@ const AnomalyCalendar: React.FC<AnomalyCalendarProps> = ({
   deviceId
 }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [showMonthPicker, setShowMonthPicker] = useState(false);
+  const [showYearPicker, setShowYearPicker] = useState(false);
 
   const monthNames = [
     'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -84,6 +86,36 @@ const AnomalyCalendar: React.FC<AnomalyCalendarProps> = ({
     });
   };
 
+  // Set specific month
+  const setMonth = (monthIndex: number): void => {
+    setCurrentMonth(prev => {
+      const newDate = new Date(prev);
+      newDate.setMonth(monthIndex);
+      return newDate;
+    });
+    setShowMonthPicker(false);
+  };
+
+  // Set specific year
+  const setYear = (year: number): void => {
+    setCurrentMonth(prev => {
+      const newDate = new Date(prev);
+      newDate.setFullYear(year);
+      return newDate;
+    });
+    setShowYearPicker(false);
+  };
+
+  // Generate year options (current year ± 5)
+  const getYearOptions = (): number[] => {
+    const currentYear = new Date().getFullYear();
+    const years: number[] = [];
+    for (let i = currentYear - 5; i <= currentYear + 5; i++) {
+      years.push(i);
+    }
+    return years;
+  };
+
   // Handle date click
   const handleDateClick = (day: number) => {
     if (onDateClick) {
@@ -114,9 +146,9 @@ const AnomalyCalendar: React.FC<AnomalyCalendarProps> = ({
     }, 0);
 
   return (
-    <div className={`bg-white rounded-lg p-6 shadow-sm border ${className}`}>
+    <div className={`bg-white rounded-lg p-4 shadow-sm border ${className}`}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-3">
         <h2 className="text-lg font-semibold text-gray-900 flex items-center">
           <Calendar className="h-5 w-5 mr-2" />
           Kalender Anomali
@@ -124,7 +156,7 @@ const AnomalyCalendar: React.FC<AnomalyCalendarProps> = ({
       </div>
       
       {/* Month Navigation */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-3">
         <button
           onClick={() => navigateMonth(-1)}
           className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -132,11 +164,73 @@ const AnomalyCalendar: React.FC<AnomalyCalendarProps> = ({
         >
           <ChevronLeft className="h-5 w-5" />
         </button>
-        
-        <h3 className="font-medium text-gray-900">
-          {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
-        </h3>
-        
+
+        <div className="flex items-center space-x-2">
+          {/* Month Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => {
+                setShowMonthPicker(!showMonthPicker);
+                setShowYearPicker(false);
+              }}
+              className="flex items-center space-x-1 px-3 py-1 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <span className="font-medium text-gray-900">
+                {monthNames[currentMonth.getMonth()]}
+              </span>
+              <ChevronDown className="h-4 w-4" />
+            </button>
+
+            {showMonthPicker && (
+              <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto">
+                {monthNames.map((month, index) => (
+                  <button
+                    key={month}
+                    onClick={() => setMonth(index)}
+                    className={`block w-full text-left px-4 py-2 hover:bg-gray-100 transition-colors ${
+                      index === currentMonth.getMonth() ? 'bg-blue-50 text-blue-600' : ''
+                    }`}
+                  >
+                    {month}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Year Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => {
+                setShowYearPicker(!showYearPicker);
+                setShowMonthPicker(false);
+              }}
+              className="flex items-center space-x-1 px-3 py-1 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <span className="font-medium text-gray-900">
+                {currentMonth.getFullYear()}
+              </span>
+              <ChevronDown className="h-4 w-4" />
+            </button>
+
+            {showYearPicker && (
+              <div className="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto">
+                {getYearOptions().map((year) => (
+                  <button
+                    key={year}
+                    onClick={() => setYear(year)}
+                    className={`block w-full text-left px-4 py-2 hover:bg-gray-100 transition-colors ${
+                      year === currentMonth.getFullYear() ? 'bg-blue-50 text-blue-600' : ''
+                    }`}
+                  >
+                    {year}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
         <button
           onClick={() => navigateMonth(1)}
           className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -147,14 +241,14 @@ const AnomalyCalendar: React.FC<AnomalyCalendarProps> = ({
       </div>
       
       {/* Month Stats */}
-      <div className="text-center text-sm text-gray-500 mb-4">
+      <div className="text-center text-sm text-gray-500 mb-3">
         <span className="font-medium">{totalAnomalies}</span> Anomali bulan ini
       </div>
-      
+
       {/* Day Headers */}
-      <div className="grid grid-cols-7 gap-1 text-center text-xs font-medium text-gray-600 mb-2">
+      <div className="grid grid-cols-7 gap-1 text-center text-xs font-medium text-gray-600 mb-1">
         {dayHeaders.map((day) => (
-          <div key={day} className="p-2">
+          <div key={day} className="p-1">
             {day}
           </div>
         ))}
@@ -164,9 +258,9 @@ const AnomalyCalendar: React.FC<AnomalyCalendarProps> = ({
       <div className="grid grid-cols-7 gap-1 text-center">
         {getDaysInMonth().map((day, index) => {
           if (day === null) {
-            return <div key={index} className="p-2"></div>;
+            return <div key={index} className="p-1.5"></div>;
           }
-          
+
           const dayData = getCalendarDayData(day);
           const today = new Date();
           const isToday =
@@ -177,7 +271,7 @@ const AnomalyCalendar: React.FC<AnomalyCalendarProps> = ({
           return (
             <div
               key={day}
-              className={`relative p-2 hover:bg-gray-50 rounded cursor-pointer transition-colors ${
+              className={`relative p-1.5 hover:bg-gray-50 rounded cursor-pointer transition-colors ${
                 isToday ? 'bg-blue-50 text-blue-600 font-medium' : ''
               } ${!dayData?.has_data ? 'opacity-50' : ''}`}
               onClick={() => handleDateClick(day)}
@@ -214,8 +308,8 @@ const AnomalyCalendar: React.FC<AnomalyCalendarProps> = ({
       </div>
 
       {/* Legend */}
-      <div className="mt-4 pt-4 border-t border-gray-200">
-        <div className="flex flex-wrap items-center justify-center gap-3 text-xs">
+      <div className="mt-3 pt-3 border-t border-gray-200">
+        <div className="flex flex-wrap items-center justify-center gap-2 text-xs">
           <div className="flex items-center gap-1">
             <div className="w-2 h-2 rounded-full bg-green-500"></div>
             <span className="text-gray-600">Low</span>

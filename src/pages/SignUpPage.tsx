@@ -1,33 +1,46 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Shield } from 'lucide-react';
-import LoginForm from '../components/forms/LoginForm';
+import SignUpForm from '../components/forms/SignUpForm';
 import { useAuth } from '../contexts/AuthContext';
 import { FullPageLoading } from '../components/common/Loading';
 
-interface LoginFormData {
+interface SignUpFormData {
+  name: string;
   email: string;
   password: string;
-  rememberMe: boolean;
+  confirmPassword: string;
 }
 
-const LoginPage: React.FC = () => {
+const SignUpPage: React.FC = () => {
   const [error, setError] = useState<string>('');
-  const { signIn, loading } = useAuth();
+  const [success, setSuccess] = useState<string>('');
+  const { signUp, loading } = useAuth();
 
-  const handleLogin = async (formData: LoginFormData) => {
+  const handleSignUp = async (formData: SignUpFormData) => {
     setError('');
+    setSuccess('');
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
 
     try {
-      await signIn(formData.email, formData.password);
+      await signUp(formData.email, formData.password, formData.name);
+      setSuccess('Account created successfully! You can now sign in.');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed. Please try again.');
+      const errorMessage = err instanceof Error ? err.message : 'Sign up failed. Please try again.';
+      if (errorMessage.includes('User already registered')) {
+        setError('This email is already registered. Please try signing in instead.');
+      } else {
+        setError(errorMessage);
+      }
     }
   };
 
-
   if (loading) {
-    return <FullPageLoading text="Signing you in..." />;
+    return <FullPageLoading text="Creating your account..." />;
   }
 
   return (
@@ -41,23 +54,24 @@ const LoginPage: React.FC = () => {
             </div>
             <h1 className="text-3xl font-bold text-gray-900">GUARD</h1>
             <p className="text-gray-600 mt-2">Grid Usage Anomaly Recognition</p>
-            <p className="text-sm text-gray-500 mt-1">Sign in to your account</p>
+            <p className="text-sm text-gray-500 mt-1">Create your account</p>
           </div>
 
           {/* Form */}
-          <LoginForm
-            onSubmit={handleLogin}
+          <SignUpForm
+            onSubmit={handleSignUp}
             loading={loading}
             error={error}
+            success={success}
           />
 
           {/* Toggle Form */}
           <div className="mt-6 text-center">
             <Link
-              to="/sign-up"
+              to="/log-in"
               className="text-blue-600 hover:text-blue-500 text-sm"
             >
-              Don't have an account? Sign up
+              Already have an account? Sign in
             </Link>
           </div>
 
@@ -95,4 +109,4 @@ const LoginPage: React.FC = () => {
   );
 };
 
-export default LoginPage;
+export default SignUpPage;
