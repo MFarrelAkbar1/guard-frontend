@@ -95,25 +95,25 @@ const Help: React.FC = () => {
       title: "Device Setup Guide",
       description: "Step-by-step guide to connect your first device",
       icon: Settings,
-      action: () => console.log("Open device setup guide")
+      action: () => {}
     },
     {
       title: "Understanding Anomalies",
       description: "Learn about different types of power anomalies",
       icon: AlertTriangle,
-      action: () => console.log("Open anomaly guide")
+      action: () => {}
     },
     {
       title: "Energy Optimization Tips",
       description: "Best practices for reducing energy consumption",
       icon: Zap,
-      action: () => console.log("Open optimization tips")
+      action: () => {}
     },
     {
       title: "System Status Check",
       description: "Verify your system is running optimally",
       icon: BarChart3,
-      action: () => console.log("Run system check")
+      action: () => {}
     }
   ];
 
@@ -192,7 +192,7 @@ const Help: React.FC = () => {
                 variant="outline"
                 size="sm"
                 fullWidth
-                onClick={() => console.log("Open chat support")}
+                onClick={() => {}}
               >
                 <MessageCircle className="h-4 w-4 mr-2" />
                 Live Chat
@@ -201,7 +201,7 @@ const Help: React.FC = () => {
                 variant="outline"
                 size="sm"
                 fullWidth
-                onClick={() => console.log("Send email")}
+                onClick={() => {}}
               >
                 <Mail className="h-4 w-4 mr-2" />
                 Email Support
@@ -210,7 +210,7 @@ const Help: React.FC = () => {
                 variant="outline"
                 size="sm"
                 fullWidth
-                onClick={() => console.log("Call support")}
+                onClick={() => {}}
               >
                 <Phone className="h-4 w-4 mr-2" />
                 Call Support

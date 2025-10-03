@@ -27,3 +27,13 @@ yarn-error.log*
 /backend/node_modules
 /backend/.env
 /backend/.env
+
+# Documentation files (except README.md)
+*.md
+!README.md
+*.txt
+*.sql
+
+# Claude and temporary files
+.claude/
+nul

@@ -80,9 +80,6 @@ const Settings: React.FC = () => {
 
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Show success message (you could use a toast library here)
-      console.log('Preferences saved successfully');
     } catch (error) {
       console.error('Failed to save preferences:', error);
     } finally {
@@ -99,7 +96,6 @@ const Settings: React.FC = () => {
       if (process.env.REACT_APP_NODE_ENV === 'development') {
         // Simulate email sending for development
         await new Promise(resolve => setTimeout(resolve, 2000));
-        console.log(`[DEV] Mock test email sent to ${user?.email}`);
         alert(`Development Mode: Mock email sent to ${user?.email}\n\nIn production, configure SMTP in Supabase Settings → Auth → SMTP Settings to enable real email notifications.`);
         setTestEmailSent(true);
       } else {
@@ -122,7 +118,6 @@ const Settings: React.FC = () => {
           throw new Error('Failed to send email');
         }
 
-        console.log(`Test email sent to ${user?.email}`);
         setTestEmailSent(true);
       }
 

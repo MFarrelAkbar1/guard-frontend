@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Calendar, ChevronDown } from 'lucide-react';
-import { CalendarDayData } from '../../types/database';
+import { CalendarDayData, Anomaly } from '../../types/database';
+import { getAnomaliesForCalendar } from '../../services/dashboardService';
+import AnomalyDetailModal from './AnomalyDetailModal';
 
 interface AnomalyCalendarProps {
   className?: string;
@@ -18,6 +20,26 @@ const AnomalyCalendar: React.FC<AnomalyCalendarProps> = ({
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showMonthPicker, setShowMonthPicker] = useState(false);
   const [showYearPicker, setShowYearPicker] = useState(false);
+  const [anomaliesMap, setAnomaliesMap] = useState<Map<string, Anomaly[]>>(new Map());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedAnomalies, setSelectedAnomalies] = useState<Anomaly[]>([]);
+  const [showModal, setShowModal] = useState(false);
+
+  // Fetch anomalies for current month
+  useEffect(() => {
+    const fetchAnomalies = async () => {
+      try {
+        const month = currentMonth.getMonth();
+        const year = currentMonth.getFullYear();
+        const anomalies = await getAnomaliesForCalendar(month, year);
+        setAnomaliesMap(anomalies);
+      } catch (error) {
+        console.error('Error fetching anomalies:', error);
+      }
+    };
+
+    fetchAnomalies();
+  }, [currentMonth]);
 
   const monthNames = [
     'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -118,12 +140,22 @@ const AnomalyCalendar: React.FC<AnomalyCalendarProps> = ({
 
   // Handle date click
   const handleDateClick = (day: number) => {
+    const clickedDate = new Date(
+      currentMonth.getFullYear(),
+      currentMonth.getMonth(),
+      day
+    );
+
+    // Get anomalies for this date
+    const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const dayAnomalies = anomaliesMap.get(dateStr) || [];
+
+    setSelectedDate(clickedDate);
+    setSelectedAnomalies(dayAnomalies);
+    setShowModal(true);
+
+    // Call parent callback if provided
     if (onDateClick) {
-      const clickedDate = new Date(
-        currentMonth.getFullYear(),
-        currentMonth.getMonth(),
-        day
-      );
       onDateClick(clickedDate);
     }
   };
@@ -146,6 +178,7 @@ const AnomalyCalendar: React.FC<AnomalyCalendarProps> = ({
     }, 0);
 
   return (
+    <>
     <div className={`bg-white rounded-lg p-4 shadow-sm border ${className}`}>
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
@@ -329,6 +362,15 @@ const AnomalyCalendar: React.FC<AnomalyCalendarProps> = ({
         </div>
       </div>
     </div>
+
+    {/* Anomaly Detail Modal */}
+    <AnomalyDetailModal
+      isOpen={showModal}
+      onClose={() => setShowModal(false)}
+      date={selectedDate}
+      anomalies={selectedAnomalies}
+    />
+    </>
   );
 };
 

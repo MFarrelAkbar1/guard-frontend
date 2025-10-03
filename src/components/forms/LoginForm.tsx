@@ -11,6 +11,7 @@ interface LoginFormData {
 
 interface LoginFormProps {
   onSubmit: (data: LoginFormData) => void;
+  onForgotPassword?: (email: string) => void;
   loading?: boolean;
   error?: string;
   className?: string;
@@ -18,6 +19,7 @@ interface LoginFormProps {
 
 const LoginForm: React.FC<LoginFormProps> = ({
   onSubmit,
+  onForgotPassword,
   loading = false,
   error,
   className = ''
@@ -193,7 +195,16 @@ const LoginForm: React.FC<LoginFormProps> = ({
           type="button"
           className="text-sm text-blue-600 hover:text-blue-500 transition-colors focus:outline-none focus:underline"
           disabled={loading}
-          onClick={() => console.log('Forgot password clicked')}
+          onClick={() => {
+            if (onForgotPassword && formData.email) {
+              onForgotPassword(formData.email);
+            } else if (onForgotPassword) {
+              const email = window.prompt('Please enter your email address:');
+              if (email) {
+                onForgotPassword(email);
+              }
+            }
+          }}
         >
           Forgot password?
         </button>
@@ -215,14 +226,12 @@ const LoginForm: React.FC<LoginFormProps> = ({
       <div className="text-center">
         <p className="text-sm text-gray-600">
           Don't have an account?{' '}
-          <button
-            type="button"
+          <a
+            href="/sign-up"
             className="text-blue-600 hover:text-blue-500 font-medium transition-colors focus:outline-none focus:underline"
-            disabled={loading}
-            onClick={() => console.log('Sign up clicked')}
           >
             Sign up here
-          </button>
+          </a>
         </p>
       </div>
     </form>

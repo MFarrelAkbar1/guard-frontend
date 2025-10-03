@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/common/Sidebar';
 import Navbar from '../components/common/Navbar';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,10 +11,11 @@ import EnergyChart from '../components/dashboard/EnergyChart';
 import Settings from '../components/dashboard/Settings';
 import Profile from '../components/dashboard/Profile';
 import Help from '../components/dashboard/Help';
-import { 
-  Power, 
-  AlertTriangle, 
-  TrendingUp, 
+import FridgeManagement from '../components/dashboard/FridgeManagement';
+import {
+  Power,
+  AlertTriangle,
+  TrendingUp,
   User,
   Zap,
   Activity,
@@ -23,6 +24,9 @@ import {
   CheckCircle,
   Clock
 } from 'lucide-react';
+import { getDashboardStats, getFridges, getRecentAnomalies } from '../services/dashboardService';
+import { getFridgeStats } from '../services/fridgeService';
+import type { DashboardStats, Fridge, Anomaly } from '../types/database';
 
 interface DashboardPageProps {
   onLogout: () => void;
@@ -40,86 +44,73 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
   const [severityFilter, setSeverityFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
 
+  // Dashboard data state
+  const [statsData, setStatsData] = useState<DashboardStats | null>(null);
+  const [fridges, setFridges] = useState<Fridge[]>([]);
+  const [anomalyLogs, setAnomalyLogs] = useState<Anomaly[]>([]);
+  const [fridgeStats, setFridgeStats] = useState<Record<string, any>>({});
+
   // Get user data from auth context
   const userName = user?.user_metadata?.name || 'User';
   const userEmail = user?.email || '';
   const userId = user?.id || 'anonymous';
 
-  // Mock data
-  const statsData = {
-    totalPower: 245.8,
-    weeklyAnomalies: 4,
-    energyEfficiency: 97,
-    costSavings: 125000
-  };
+  // Fetch dashboard data
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        // Fetch all data in parallel
+        const [stats, fridgesList, anomalies] = await Promise.all([
+          getDashboardStats(),
+          getFridges(),
+          getRecentAnomalies(20)
+        ]);
 
-  const devices = [
-    {
-      id: 'NR-BB332Q-PK-1',
-      user_id: userId,
-      name: 'Kulkas NR-BB332Q-PK-1',
-      location: 'Kitchen Area',
-      status: 'online' as const,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      latest_power: 149.94,
-      latest_timestamp: new Date().toISOString(),
-      anomaly_count_today: 0,
-      total_data_points_today: 144
-    },
-    {
-      id: 'NR-BB332Q-PK-2',
-      user_id: userId,
-      name: 'Kulkas NR-BB332Q-PK-2',
-      location: 'Storage Room',
-      status: 'warning' as const,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      latest_power: 95.86,
-      latest_timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(), // 5 minutes ago
-      anomaly_count_today: 2,
-      total_data_points_today: 142
-    }
-  ];
+        setStatsData(stats);
+        setFridges(fridgesList);
+        setAnomalyLogs(anomalies);
 
-  const anomalyLogs = [
-    { 
-      id: 1, 
-      device: 'Kulkas NR-BB332Q-PK-2', 
-      type: 'Overcurrent Detected', 
-      date: '2025-05-13 08:45:22',
-      severity: 'high' as const,
-      status: 'active' as const,
-      description: 'Current exceeded normal threshold by 15%'
-    },
-    { 
-      id: 2, 
-      device: 'Kulkas NR-BB332Q-PK-2', 
-      type: 'Voltage Fluctuation', 
-      date: '2025-05-13 13:22:15',
-      severity: 'medium' as const,
-      status: 'resolved' as const,
-      description: 'Voltage dropped below 200V for 3 minutes'
-    },
-    { 
-      id: 3, 
-      device: 'Kulkas NR-BB332Q-PK-2', 
-      type: 'Power Interruption', 
-      date: '2025-05-12 22:18:33',
-      severity: 'critical' as const,
-      status: 'resolved' as const,
-      description: 'Complete power loss detected for 45 seconds'
-    },
-    {
-      id: 4,
-      device: 'Kulkas NR-BB332Q-PK-1',
-      type: 'Phase Imbalance',
-      date: '2025-05-12 14:30:18',
-      severity: 'low' as const,
-      status: 'resolved' as const,
-      description: 'Minor phase imbalance detected and corrected'
-    }
-  ];
+        // Fetch stats for each fridge
+        const statsPromises = fridgesList.map(async (fridge) => {
+          const stats = await getFridgeStats(fridge.id);
+          return { [fridge.id]: stats };
+        });
+
+        const statsResults = await Promise.all(statsPromises);
+        const combinedStats = statsResults.reduce((acc, stat) => ({ ...acc, ...stat }), {});
+        setFridgeStats(combinedStats);
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      }
+    };
+
+    fetchDashboardData();
+
+    // Refresh data every minute
+    const interval = setInterval(fetchDashboardData, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Convert fridges to device format for EnergyCard
+  const devices = fridges.map((fridge) => {
+    const stats = fridgeStats[fridge.id];
+    const hasRecentData = stats?.lastUpdated &&
+      (new Date().getTime() - new Date(stats.lastUpdated).getTime()) < 5 * 60 * 1000;
+
+    return {
+      id: fridge.id,
+      user_id: fridge.user_id,
+      name: fridge.name,
+      location: fridge.location || 'Unknown Location',
+      status: (hasRecentData ? 'online' : (stats?.anomalyCount > 0 ? 'warning' : 'offline')) as 'online' | 'offline' | 'warning' | 'error',
+      created_at: fridge.created_at,
+      updated_at: fridge.updated_at,
+      latest_power: stats?.latestPowerWatts || 0,
+      latest_timestamp: stats?.lastUpdated || new Date().toISOString(),
+      anomaly_count_today: stats?.anomalyCount || 0,
+      total_data_points_today: 1440 // 1 minute intervals = 1440 per day
+    };
+  });
 
   const handleLogout = () => {
     setShowLogoutConfirm(true);
@@ -135,13 +126,11 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
   };
 
   const handleDeviceControl = (deviceId: string, action: 'disconnect' | 'reconnect') => {
-    console.log(`Device ${deviceId} ${action} requested`);
     // In real app, this would call an API
     // You could also show a toast notification here
   };
 
   const handleDateClick = (date: Date) => {
-    console.log('Calendar date clicked:', date);
     // Could open modal with anomaly details for that date
     // setCurrentView('anomaly'); // Navigate to anomaly log
   };
@@ -176,7 +165,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
   };
 
   // Filter anomaly logs
-  const filteredAnomalyLogs = anomalyLogs.filter(log => {
+  const filteredAnomalyLogs = anomalyLogs.filter((log: any) => {
     if (severityFilter !== 'all' && log.severity !== severityFilter) {
       return false;
     }
@@ -190,14 +179,14 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
   const handleExport = () => {
     const csvContent = [
       ['ID', 'Device', 'Type', 'Date', 'Severity', 'Status', 'Description'],
-      ...filteredAnomalyLogs.map(log => [
+      ...filteredAnomalyLogs.map((log: any) => [
         log.id,
-        log.device,
+        log.fridges?.name || 'Unknown Device',
         log.type,
-        log.date,
+        log.detected_at,
         log.severity,
         log.status,
-        log.description
+        log.description || ''
       ])
     ];
 
@@ -276,57 +265,41 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
               {/* Stats Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatsCard
-                  title="Total Power"
-                  value={`${statsData.totalPower}W`}
-                  subtitle="Current consumption"
+                  title="Daily Total Power"
+                  value={statsData ? `${statsData.total_power_today_kwh.toFixed(2)} kWh` : 'Loading...'}
+                  subtitle="Today's consumption"
                   icon={Power}
                   color="blue"
-                  trend={{
-                    value: 2.5,
+                  trend={statsData ? {
+                    value: statsData.total_power_trend.value,
                     label: 'from yesterday',
-                    type: 'increase'
-                  }}
-                  onClick={() => console.log('Power stats clicked')}
+                    type: statsData.total_power_trend.type
+                  } : undefined}
                 />
-                
+
                 <StatsCard
                   title="Efficiency"
-                  value={`${statsData.energyEfficiency}%`}
+                  value={statsData ? `${statsData.energy_efficiency}%` : 'Loading...'}
                   subtitle="Overall system efficiency"
                   icon={TrendingUp}
                   color="green"
-                  trend={{
-                    value: 1.2,
-                    label: 'from last week',
-                    type: 'increase'
-                  }}
                 />
-                
+
                 <StatsCard
                   title="Weekly Anomalies"
-                  value={statsData.weeklyAnomalies}
+                  value={statsData ? statsData.anomalies_this_week : 'Loading...'}
                   subtitle="Anomalies detected this week"
                   icon={AlertTriangle}
                   color="orange"
-                  trend={{
-                    value: 25,
-                    label: 'from last week',
-                    type: 'decrease'
-                  }}
                   onClick={() => setCurrentView('anomaly')}
                 />
-                
+
                 <StatsCard
                   title="Cost Savings"
-                  value={`Rp ${statsData.costSavings.toLocaleString()}`}
-                  subtitle="Monthly savings estimate"
+                  value={statsData ? `Rp ${statsData.cost_savings_idr.toLocaleString('id-ID')}` : 'Loading...'}
+                  subtitle="Total savings estimate"
                   icon={Zap}
                   color="purple"
-                  trend={{
-                    value: 15,
-                    label: 'this month',
-                    type: 'increase'
-                  }}
                 />
               </div>
 
@@ -494,17 +467,17 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
                 </div>
                 
                 <div className="divide-y divide-gray-200">
-                  {filteredAnomalyLogs.map((log, index) => (
+                  {filteredAnomalyLogs.map((log: any, index) => (
                     <div key={log.id} className={`p-6 hover:bg-gray-50 transition-colors ${index === 0 ? 'bg-blue-50' : ''}`}>
                       <div className="flex items-start justify-between">
                         <div className="flex items-start space-x-3">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
                               {getStatusIcon(log.status)}
-                              <h3 className="font-medium text-gray-900">{log.device}</h3>
+                              <h3 className="font-medium text-gray-900">{log.fridges?.name || 'Unknown Device'}</h3>
                             </div>
-                            <p className="text-sm text-gray-600 mb-1">{log.description}</p>
-                            <p className="text-xs text-gray-500">{formatDate(log.date)}</p>
+                            <p className="text-sm text-gray-600 mb-1">{log.description || 'No description available'}</p>
+                            <p className="text-xs text-gray-500">{formatDate(log.detected_at)}</p>
                           </div>
                         </div>
                         <div className="flex items-center space-x-3">
@@ -542,6 +515,23 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
                 </div>
               </div>
             </div>
+          ) : currentView === 'fridges' ? (
+            // FRIDGES VIEW
+            <FridgeManagement
+              fridges={fridges}
+              fridgeStats={fridgeStats}
+              onRefresh={async () => {
+                const fridgesList = await getFridges();
+                setFridges(fridgesList);
+                const statsPromises = fridgesList.map(async (fridge) => {
+                  const stats = await getFridgeStats(fridge.id);
+                  return { [fridge.id]: stats };
+                });
+                const statsResults = await Promise.all(statsPromises);
+                const combinedStats = statsResults.reduce((acc, stat) => ({ ...acc, ...stat }), {});
+                setFridgeStats(combinedStats);
+              }}
+            />
           ) : currentView === 'settings' ? (
             // SETTINGS VIEW
             <Settings />

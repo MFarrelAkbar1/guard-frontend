@@ -13,7 +13,7 @@ interface LoginFormData {
 
 const LoginPage: React.FC = () => {
   const [error, setError] = useState<string>('');
-  const { signIn, loading } = useAuth();
+  const { signIn, resetPassword, loading } = useAuth();
 
   const handleLogin = async (formData: LoginFormData) => {
     setError('');
@@ -22,6 +22,16 @@ const LoginPage: React.FC = () => {
       await signIn(formData.email, formData.password);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed. Please try again.');
+    }
+  };
+
+  const handleForgotPassword = async (email: string) => {
+    setError('');
+    try {
+      await resetPassword(email);
+      alert(`Password reset email sent to ${email}. Please check your inbox and spam folder.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to send reset email. Please try again.');
     }
   };
 
@@ -47,6 +57,7 @@ const LoginPage: React.FC = () => {
           {/* Form */}
           <LoginForm
             onSubmit={handleLogin}
+            onForgotPassword={handleForgotPassword}
             loading={loading}
             error={error}
           />

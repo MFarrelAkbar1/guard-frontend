@@ -1,13 +1,14 @@
 import React from 'react';
-import { 
-  Shield, 
-  Home, 
-  FileText, 
-  User, 
-  Settings, 
-  HelpCircle, 
+import {
+  Shield,
+  Home,
+  FileText,
+  User,
+  Settings,
+  HelpCircle,
   LogOut,
-  X
+  X,
+  Refrigerator
 } from 'lucide-react';
 
 interface MenuItem {
@@ -40,6 +41,13 @@ const Sidebar: React.FC<SidebarProps> = ({
       icon: <Home className="h-5 w-5" />,
       active: currentView === 'dashboard',
       onClick: () => onViewChange('dashboard')
+    },
+    {
+      id: 'fridges',
+      label: 'Fridges',
+      icon: <Refrigerator className="h-5 w-5" />,
+      active: currentView === 'fridges',
+      onClick: () => onViewChange('fridges')
     },
     {
       id: 'anomaly',
