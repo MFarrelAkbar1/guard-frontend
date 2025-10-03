@@ -73,58 +73,57 @@ const AnomalyDetailModal: React.FC<AnomalyDetailModalProps> = ({
         onClick={onClose}
       />
 
-      {/* Modal with slide-up animation */}
-      <div
-        className={`fixed inset-x-0 bottom-0 z-50 transition-transform duration-300 ease-out ${
-          isOpen ? 'translate-y-0' : 'translate-y-full'
-        }`}
-      >
-        <div className="bg-white rounded-t-2xl shadow-2xl max-h-[80vh] overflow-hidden flex flex-col">
+      {/* Modal with fade and scale animation */}
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div
+          className={`bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-hidden flex flex-col transition-all duration-300 ${
+            isOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'
+          }`}
+        >
           {/* Header */}
-          <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6">
+          <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4">
             <div className="flex justify-between items-start">
               <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <Calendar className="h-5 w-5" />
-                  <h2 className="text-xl font-bold">{formatDate(date)}</h2>
+                <div className="flex items-center gap-2 mb-1">
+                  <Calendar className="h-4 w-4" />
+                  <h2 className="text-lg font-bold">{formatDate(date)}</h2>
                 </div>
-                <p className="text-blue-100 text-sm">
+                <p className="text-blue-100 text-xs">
                   {anomalies.length} {anomalies.length === 1 ? 'Anomaly' : 'Anomalies'} Detected
                 </p>
               </div>
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-white/20 rounded-full transition-colors"
+                className="p-1 hover:bg-white/20 rounded-full transition-colors"
               >
-                <X className="h-6 w-6" />
+                <X className="h-5 w-5" />
               </button>
             </div>
           </div>
 
           {/* Scrollable Content */}
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto p-4">
             {anomalies.length === 0 ? (
-              <div className="text-center py-12">
-                <Activity className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500">No anomalies detected on this date</p>
+              <div className="text-center py-8">
+                <Activity className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-sm text-gray-500">No anomalies detected on this date</p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {anomalies.map((anomaly, index) => (
                   <div
                     key={anomaly.id}
-                    className="bg-white border-2 border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200 animate-fade-in"
-                    style={{ animationDelay: `${index * 50}ms` }}
+                    className="bg-gray-50 border border-gray-200 rounded-lg p-3 hover:shadow-sm transition-all duration-200"
                   >
                     {/* Anomaly Header */}
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-3">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-2">
                         {getSeverityIcon(anomaly.severity)}
                         <div>
-                          <h3 className="font-semibold text-gray-900 capitalize">
+                          <h3 className="text-sm font-semibold text-gray-900 capitalize">
                             {anomaly.type.replace(/_/g, ' ')}
                           </h3>
-                          <div className="flex items-center gap-2 mt-1">
+                          <div className="flex items-center gap-1 mt-0.5">
                             <Clock className="h-3 w-3 text-gray-400" />
                             <span className="text-xs text-gray-500">
                               {formatTime(anomaly.detected_at)}
@@ -133,7 +132,7 @@ const AnomalyDetailModal: React.FC<AnomalyDetailModalProps> = ({
                         </div>
                       </div>
                       <span
-                        className={`px-3 py-1 rounded-full text-xs font-medium border ${getSeverityColor(
+                        className={`px-2 py-0.5 rounded-full text-xs font-medium border ${getSeverityColor(
                           anomaly.severity
                         )}`}
                       >
@@ -143,17 +142,17 @@ const AnomalyDetailModal: React.FC<AnomalyDetailModalProps> = ({
 
                     {/* Anomaly Description */}
                     {anomaly.description && (
-                      <p className="text-sm text-gray-600 mb-3 pl-8">
+                      <p className="text-xs text-gray-600 mb-2 pl-7">
                         {anomaly.description}
                       </p>
                     )}
 
                     {/* Anomaly Footer */}
-                    <div className="flex items-center justify-between pl-8 pt-3 border-t border-gray-100">
+                    <div className="flex items-center justify-between pl-7 pt-2 border-t border-gray-200">
                       <div className="text-xs text-gray-500">
                         {(anomaly as any).fridges?.name || 'Unknown Device'}
                       </div>
-                      <div className={`px-2 py-1 rounded text-xs font-medium ${
+                      <div className={`px-2 py-0.5 rounded text-xs font-medium ${
                         anomaly.status === 'resolved'
                           ? 'bg-green-100 text-green-700'
                           : 'bg-orange-100 text-orange-700'
@@ -168,10 +167,10 @@ const AnomalyDetailModal: React.FC<AnomalyDetailModalProps> = ({
           </div>
 
           {/* Footer */}
-          <div className="border-t border-gray-200 p-4 bg-gray-50">
+          <div className="border-t border-gray-200 p-3 bg-gray-50">
             <button
               onClick={onClose}
-              className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg transition-colors"
+              className="w-full py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors"
             >
               Close
             </button>

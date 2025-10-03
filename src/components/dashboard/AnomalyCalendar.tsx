@@ -58,21 +58,27 @@ const AnomalyCalendar: React.FC<AnomalyCalendarProps> = ({
       return realData;
     }
 
-    // Fallback to mock data for demo
-    const mockAnomalies: Record<number, Omit<CalendarDayData, 'date'>> = {
-      1: { total_data_points: 144, anomaly_count: 1, max_severity: 'high', has_data: true },
-      2: { total_data_points: 142, anomaly_count: 2, max_severity: 'critical', has_data: true },
-      4: { total_data_points: 140, anomaly_count: 1, max_severity: 'critical', has_data: true },
-      9: { total_data_points: 145, anomaly_count: 1, max_severity: 'medium', has_data: true },
-      10: { total_data_points: 143, anomaly_count: 1, max_severity: 'high', has_data: true },
-      11: { total_data_points: 141, anomaly_count: 1, max_severity: 'critical', has_data: true },
-      15: { total_data_points: 144, anomaly_count: 1, max_severity: 'low', has_data: true },
-      18: { total_data_points: 142, anomaly_count: 2, max_severity: 'medium', has_data: true },
-      22: { total_data_points: 143, anomaly_count: 1, max_severity: 'high', has_data: true }
-    };
+    // Check database anomalies for this date
+    const dayAnomalies = anomaliesMap.get(dateStr) || [];
+    if (dayAnomalies.length > 0) {
+      // Calculate max severity from actual anomalies
+      const severityOrder: Record<string, number> = { low: 1, medium: 2, high: 3, critical: 4 };
+      const maxSeverity = dayAnomalies.reduce<'low' | 'medium' | 'high' | 'critical'>((max, anomaly) => {
+        const currentLevel = severityOrder[anomaly.severity] || 0;
+        const maxLevel = severityOrder[max] || 0;
+        return currentLevel > maxLevel ? (anomaly.severity as 'low' | 'medium' | 'high' | 'critical') : max;
+      }, 'low');
 
-    const mockData = mockAnomalies[day];
-    return mockData ? { date: dateStr, ...mockData } : null;
+      return {
+        date: dateStr,
+        total_data_points: 144, // Default value
+        anomaly_count: dayAnomalies.length,
+        max_severity: maxSeverity,
+        has_data: true
+      };
+    }
+
+    return null;
   };
 
   // Generate calendar days
