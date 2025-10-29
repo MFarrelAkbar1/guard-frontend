@@ -236,8 +236,7 @@ async function checkForAnomalies(reading) {
 
 const http = require('http');
 
-const server = http.createServer(async (req, res) => {
-  // Health check endpoint
+const server = http.createServer((req, res) => {
   if (req.url === '/health' || req.url === '/') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
@@ -247,84 +246,10 @@ const server = http.createServer(async (req, res) => {
       uptime: process.uptime(),
       timestamp: new Date().toISOString()
     }));
-    return;
+  } else {
+    res.writeHead(404);
+    res.end('Not Found');
   }
-
-  // HTTP endpoint for sensor data (alternative to MQTT)
-  if (req.url === '/sensor/data' && req.method === 'POST') {
-    let body = '';
-
-    req.on('data', chunk => {
-      body += chunk.toString();
-    });
-
-    req.on('end', async () => {
-      try {
-        const sensorData = JSON.parse(body);
-        console.log('\n📨 Received HTTP POST from sensor:');
-        console.log(`   Data: ${body}`);
-
-        // Validate required fields
-        if (!sensorData.fridge_id || !sensorData.voltage || !sensorData.current) {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Missing required fields: fridge_id, voltage, current' }));
-          return;
-        }
-
-        // Calculate power
-        const voltage = parseFloat(sensorData.voltage);
-        const current = parseFloat(sensorData.current);
-        const powerConsumption = voltage * current;
-        const timestamp = sensorData.recorded_at || new Date().toISOString();
-
-        // Prepare data
-        const powerReading = {
-          fridge_id: sensorData.fridge_id,
-          voltage: parseFloat(voltage.toFixed(2)),
-          current: parseFloat(current.toFixed(2)),
-          power_consumption: parseFloat(powerConsumption.toFixed(2)),
-          recorded_at: timestamp
-        };
-
-        console.log('💾 Inserting to database:', powerReading);
-
-        // Insert into Supabase
-        const { data, error } = await supabase
-          .from('power_readings')
-          .insert([powerReading]);
-
-        if (error) {
-          console.error('❌ Database error:', error);
-          res.writeHead(500, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Database insertion failed', details: error.message }));
-          return;
-        }
-
-        console.log('✅ Successfully inserted to database');
-
-        // Check for anomalies
-        await checkForAnomalies(powerReading);
-
-        // Send success response
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({
-          status: 'success',
-          message: 'Data received and stored',
-          power_consumption: powerConsumption
-        }));
-
-      } catch (error) {
-        console.error('❌ Error processing HTTP request:', error.message);
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Internal server error', details: error.message }));
-      }
-    });
-    return;
-  }
-
-  // 404 for other routes
-  res.writeHead(404);
-  res.end('Not Found');
 });
 
 server.listen(PORT, () => {
