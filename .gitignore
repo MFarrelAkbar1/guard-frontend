@@ -35,3 +35,12 @@ coverage/
 
 # Misc
 .eslintcache
+
+# Documentation (kept locally, not in repo)
+docs/
+*/docs/
+*/database/
+NEXT_STEPS.md
+PROJECT_ORGANIZATION.md
+*/DEPLOYMENT_*.md
+*/FRIDGE_UUIDS.txt
