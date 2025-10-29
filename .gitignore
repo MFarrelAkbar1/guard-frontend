@@ -28,6 +28,7 @@ nul
 .idea/
 *.swp
 *.swo
+.claude/
 
 # Testing
 coverage/
