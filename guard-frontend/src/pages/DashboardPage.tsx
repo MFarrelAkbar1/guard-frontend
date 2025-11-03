@@ -108,7 +108,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
       latest_power: stats?.latestPowerWatts || 0,
       latest_timestamp: stats?.lastUpdated || new Date().toISOString(),
       anomaly_count_today: stats?.anomalyCount || 0,
-      total_data_points_today: 1440 // 1 minute intervals = 1440 per day
+      total_data_points_today: stats?.dataPointsToday || 0
     };
   });
 

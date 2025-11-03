@@ -161,11 +161,21 @@ export async function getFridgeStats(fridgeId: string) {
 
     if (anomalyError) throw anomalyError;
 
+    // Get data points count today
+    const { count: dataPointsCount, error: dataPointsError } = await supabase
+      .from('power_readings')
+      .select('*', { count: 'exact', head: true })
+      .eq('fridge_id', fridgeId)
+      .gte('recorded_at', today);
+
+    if (dataPointsError) throw dataPointsError;
+
     return {
       todayPowerKwh: todayStats?.total_power_kwh || 0,
       latestPowerWatts: latestReading?.power_consumption || 0,
       latestTemperature: latestReading?.temperature || null,
       anomalyCount: anomalyCount || 0,
+      dataPointsToday: dataPointsCount || 0,
       lastUpdated: latestReading?.recorded_at || null
     };
   } catch (error) {

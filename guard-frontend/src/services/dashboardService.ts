@@ -303,3 +303,44 @@ export async function getRecentAnomalies(limit: number = 10): Promise<Anomaly[]>
     throw error;
   }
 }
+
+/**
+ * Get power readings for chart with different time ranges
+ */
+export async function getPowerReadingsForChart(
+  timeRange: '1h' | '24h' | '7d' | '30d' = '24h'
+): Promise<PowerReading[]> {
+  try {
+    const now = new Date();
+    let startTime: Date;
+
+    switch (timeRange) {
+      case '1h':
+        startTime = new Date(now.getTime() - 60 * 60 * 1000);
+        break;
+      case '24h':
+        startTime = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        break;
+      case '7d':
+        startTime = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case '30d':
+        startTime = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        startTime = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    }
+
+    const { data, error } = await supabase
+      .from('power_readings')
+      .select('*')
+      .gte('recorded_at', startTime.toISOString())
+      .order('recorded_at', { ascending: true });
+
+    if (error) throw error;
+    return (data || []) as PowerReading[];
+  } catch (error) {
+    console.error('Error fetching power readings for chart:', error);
+    throw error;
+  }
+}

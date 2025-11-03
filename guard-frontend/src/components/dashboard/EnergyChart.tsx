@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, BarChart3, Calendar, Download } from 'lucide-react';
 import Button from '../common/Button';
+import { getPowerReadingsForChart } from '../../services/dashboardService';
 
 interface EnergyDataPoint {
   timestamp: string;
@@ -27,39 +28,31 @@ const EnergyChart: React.FC<EnergyChartProps> = ({
   const [data, setData] = useState<EnergyDataPoint[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Generate mock data
-  const generateMockData = (range: string): EnergyDataPoint[] => {
-    const dataPoints = range === '1h' ? 12 : range === '24h' ? 24 : range === '7d' ? 7 : 30;
-    const interval = range === '1h' ? 5 : range === '24h' ? 60 : range === '7d' ? 1440 : 43200; // minutes
-    
-    const data: EnergyDataPoint[] = [];
-    const now = new Date();
-    
-    for (let i = dataPoints - 1; i >= 0; i--) {
-      const timestamp = new Date(now.getTime() - (i * interval * 60 * 1000));
-      
-      // Generate realistic energy data with some variation
-      const baseHour = timestamp.getHours();
-      const powerMultiplier = 0.7 + (Math.sin((baseHour - 6) * Math.PI / 12) * 0.3);
-      
-      data.push({
-        timestamp: timestamp.toISOString(),
-        power: Math.round((120 + Math.random() * 60) * powerMultiplier),
-        voltage: Math.round(220 + (Math.random() - 0.5) * 10),
-        current: Math.round((0.5 + Math.random() * 0.3) * 100) / 100
-      });
-    }
-    
-    return data;
-  };
-
   // Load data when time range changes
   useEffect(() => {
-    setLoading(true);
-    setTimeout(() => {
-      setData(generateMockData(selectedTimeRange));
-      setLoading(false);
-    }, 500);
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const readings = await getPowerReadingsForChart(selectedTimeRange);
+
+        // Transform power readings to chart data format
+        const chartData = readings.map(reading => ({
+          timestamp: reading.recorded_at,
+          power: Number(reading.power_consumption ?? 0),
+          voltage: Number(reading.voltage ?? 0),
+          current: Number(reading.current ?? 0)
+        })) as EnergyDataPoint[];
+
+        setData(chartData);
+      } catch (error) {
+        console.error('Error fetching chart data:', error);
+        setData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, [selectedTimeRange]);
 
   // Get metric configuration
