@@ -1,6 +1,6 @@
 # GUARD - Grid Usage Anomaly Recognition and Disconnection
 ## 👥 Team
-![Team GUARD](public/kelompok.png)
+![Team GUARD](./kelompok.png)
 - **Leader Supervisor**: [Sakti Cahya Buana]
 - **Web Developer**: [Muhammad Farrel Akbar, Sakti Cahya Buana]
 - **Instrument Technician**: [Stasya Adelia, Christy Clarrimond Kewas, Ahmad Maydanul Ilmi]
