@@ -44,3 +44,12 @@ NEXT_STEPS.md
 PROJECT_ORGANIZATION.md
 */DEPLOYMENT_*.md
 */FRIDGE_UUIDS.txt
+CONVERSATION_LOG.md
+*-COMPLETE.md
+*_SUMMARY.md
+
+# MQTT Bridge (Node-RED - runs locally only, not deployed)
+guard-mqtt-bridge/
+
+# Archive (old files kept locally for reference)
+archive/

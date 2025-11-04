@@ -92,31 +92,40 @@ npm start
 
 ## 📁 Project Structure
 
+### GitHub Repository (Deployed Code)
 ```
-guard-frontend/
-├── src/                          # Source code
+guard-frontend/                  # React Dashboard Application
+├── src/                         # Source code
 │   ├── components/              # React components
-│   │   ├── common/             # Shared components (Navbar, Modal, etc)
-│   │   ├── dashboard/          # Dashboard components
-│   │   └── forms/              # Form components
-│   ├── contexts/               # React contexts (Auth, Theme)
-│   ├── pages/                  # Page components
-│   ├── services/               # API services
-│   ├── lib/                    # Libraries (Supabase client)
-│   └── types/                  # TypeScript definitions
+│   │   ├── common/              # Shared components (Navbar, Modal, etc)
+│   │   ├── dashboard/           # Dashboard components
+│   │   └── forms/               # Form components
+│   ├── contexts/                # React contexts (Auth, Theme)
+│   ├── pages/                   # Page components
+│   ├── services/                # API services
+│   ├── lib/                     # Libraries (Supabase client)
+│   └── types/                   # TypeScript definitions
 ├── public/                      # Static files
-├── docs/                        # 📚 Documentation
-│   ├── README.md               # Documentation index
-│   ├── APPLY_SCHEMA_CHANGES.md # Database migration guide ⭐
-│   ├── DATABASE_SETUP_*.md     # Setup guides
-│   └── ...                     # Other docs
-├── database/                    # 🗄️ Database files
-│   ├── README.md               # Database index
-│   ├── DATABASE_SCHEMA_UPDATED.sql  # Current schema ⭐
-│   ├── SCHEMA_MIGRATION.sql    # Migration script ⭐
-│   └── MOCK_DATA_*.sql         # Test data
-└── README.md                    # This file
+└── README.md
 ```
+
+### Local Development Only (Not in GitHub)
+```
+guard-mqtt-bridge/               # Node-RED MQTT Bridge (runs on hardware team's Node-RED)
+├── flows.json                   # Node-RED flow with GUARD anomaly detection
+├── test-hardware-format.js      # Test script (simulates STM32 minimal format)
+├── test-mqtt-publisher-fixed.js # Test script (full format, 12 samples)
+├── test-mqtt-extended.js        # Test script (70 samples for bootstrap)
+└── package.json                 # Dependencies
+
+archive/                         # Historical documentation & old files
+├── old-flows/                   # Previous Node-RED flow versions
+├── old-tests/                   # Old test scripts
+├── documentation/               # Historical documentation
+└── migration-scripts/           # Completed migration scripts
+```
+
+**Note**: Only `guard-frontend/` is in the GitHub repository. The `guard-mqtt-bridge/` folder contains Node-RED flows that are imported into Node-RED's web UI and run locally on the hardware team's machine.
 
 ## 📡 API Endpoints
 
