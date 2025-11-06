@@ -118,8 +118,13 @@ export interface PowerReadingWithFridge extends PowerReading {
 export interface DeviceWithStats extends Device {
   latest_power?: number;
   latest_timestamp?: string;
+  anomaly_count?: number;
   anomaly_count_today?: number;
   total_data_points_today?: number;
+  current_power?: number;
+  total_energy?: number;
+  voltage?: number;
+  current?: number;
 }
 
 export interface AnomalyWithRawData extends Anomaly {

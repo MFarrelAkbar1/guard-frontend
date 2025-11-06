@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
-import { Power, AlertTriangle, CheckCircle, Wifi, WifiOff } from 'lucide-react';
+// src/components/dashboard/EnergyCard.tsx
+
+import React, { useState, useEffect } from 'react';
+import { Power, AlertTriangle, CheckCircle, Wifi, WifiOff, Loader2 } from 'lucide-react';
 import Button from '../common/Button';
 import { ConfirmModal } from '../common/Modal';
 import { DeviceWithStats } from '../../types/database';
+import { controlMotor, getMotorStatus } from '../../services/motorControlService';
 
 interface EnergyCardProps {
   device: DeviceWithStats;
@@ -10,14 +13,16 @@ interface EnergyCardProps {
   className?: string;
 }
 
-const EnergyCard: React.FC<EnergyCardProps> = ({ 
-  device, 
-  onControlDevice, 
-  className = '' 
+const EnergyCard: React.FC<EnergyCardProps> = ({
+  device,
+  onControlDevice,
+  className = ''
 }) => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<'disconnect' | 'reconnect' | null>(null);
   const [loading, setLoading] = useState(false);
+  const [motorStatus, setMotorStatus] = useState<'ON' | 'OFF' | 'unknown'>('unknown');
+  const [lastCommand, setLastCommand] = useState<string>('');
 
   // Status configurations
   const statusConfig = {
@@ -53,7 +58,27 @@ const EnergyCard: React.FC<EnergyCardProps> = ({
 
   const config = statusConfig[device.status];
 
-  // Handle device control
+  // Fetch motor status on component mount and periodically
+  useEffect(() => {
+    fetchMotorStatus();
+    
+    // Poll status every 10 seconds
+    const interval = setInterval(fetchMotorStatus, 10000);
+    
+    return () => clearInterval(interval);
+  }, [device.id]);
+
+  const fetchMotorStatus = async () => {
+    try {
+      const status = await getMotorStatus(device.id);
+      setMotorStatus(status.last_command as 'ON' | 'OFF' | 'unknown');
+      setLastCommand(status.last_command);
+    } catch (error) {
+      console.error('Failed to fetch motor status:', error);
+    }
+  };
+
+  // Handle device control via Node-RED API
   const handleControlClick = (action: 'disconnect' | 'reconnect') => {
     setPendingAction(action);
     setShowConfirmModal(true);
@@ -61,135 +86,156 @@ const EnergyCard: React.FC<EnergyCardProps> = ({
 
   const confirmAction = async () => {
     if (!pendingAction) return;
-    
+
     setLoading(true);
+    setShowConfirmModal(false);
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API call
+      // Map UI action to MQTT command
+      const command = pendingAction === 'disconnect' ? 'OFF' : 'ON';
+      
+      // Send command via Node-RED API
+      const response = await controlMotor(device.id, command);
+      
+      console.log('Motor control response:', response);
+      
+      // Update local state
+      setMotorStatus(command);
+      setLastCommand(command);
+      
+      // Call parent callback if provided (for UI updates)
       onControlDevice?.(device.id, pendingAction);
+      
+      // Show success message (you can implement a toast notification here)
+      alert(`Success: ${response.message}`);
+      
     } catch (error) {
-      console.error('Control action failed:', error);
+      console.error('Failed to control motor:', error);
+      alert(`Failed to ${pendingAction} motor. Please try again.`);
     } finally {
       setLoading(false);
-      setShowConfirmModal(false);
       setPendingAction(null);
     }
   };
 
-  // Format last update time
-  const formatLastUpdate = (timestamp: string): string => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-    
-    if (diffMinutes < 1) return 'Just now';
-    if (diffMinutes < 60) return `${diffMinutes}m ago`;
-    if (diffMinutes < 1440) return `${Math.floor(diffMinutes / 60)}h ago`;
-    return date.toLocaleDateString();
+  const cancelAction = () => {
+    setShowConfirmModal(false);
+    setPendingAction(null);
   };
 
+  // Determine if motor is currently ON or OFF
+  const isMotorOn = motorStatus === 'ON';
+
   return (
-    <div className={`${config.bgColor} border rounded-lg p-4 transition-all hover:shadow-md ${className}`}>
-      {/* Header */}
+    <div className={`${config.bgColor} border-2 rounded-xl p-6 transition-all hover:shadow-md ${className}`}>
+      {/* Card Header */}
       <div className="flex items-start justify-between mb-4">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
-            <h3 className="font-medium text-gray-900 truncate">{device.name}</h3>
-            {config.connectionIcon}
+        <div className="flex items-center gap-3">
+          <div className={`w-12 h-12 ${isMotorOn ? 'bg-green-100' : 'bg-gray-100'} rounded-lg flex items-center justify-center`}>
+            <Power className={`h-6 w-6 ${isMotorOn ? 'text-green-600' : 'text-gray-600'}`} />
           </div>
-          {device.location && (
-            <p className="text-xs text-gray-500">{device.location}</p>
-          )}
+          <div>
+            <h3 className="font-semibold text-gray-900">{device.name}</h3>
+            <div className="flex items-center gap-2 mt-1">
+              {config.connectionIcon}
+              <span className="text-sm text-gray-600">{device.id}</span>
+            </div>
+          </div>
         </div>
-        
-        {/* Status Badge */}
-        <span className={`px-2 py-1 text-xs rounded-full ${config.statusBadge}`}>
+        <span className={`px-3 py-1 rounded-full text-xs font-medium ${config.statusBadge}`}>
           {config.label}
         </span>
       </div>
 
-      {/* Main Metrics */}
-      <div className="mb-4">
-        {/* Latest Power Reading */}
-        <div className="flex items-end gap-2 mb-2">
-          <span className="text-3xl font-bold text-gray-900">
-            {device.latest_power?.toFixed(1) || '--'}W
+      {/* Energy Metrics */}
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        <div className="bg-white bg-opacity-50 rounded-lg p-3">
+          <p className="text-xs text-gray-600 mb-1">Current Power</p>
+          <p className="text-lg font-bold text-gray-900">
+            {device.current_power?.toFixed(2) || '0.00'} W
+          </p>
+        </div>
+        <div className="bg-white bg-opacity-50 rounded-lg p-3">
+          <p className="text-xs text-gray-600 mb-1">Total Energy</p>
+          <p className="text-lg font-bold text-gray-900">
+            {device.total_energy?.toFixed(3) || '0.000'} kWh
+          </p>
+        </div>
+        <div className="bg-white bg-opacity-50 rounded-lg p-3">
+          <p className="text-xs text-gray-600 mb-1">Voltage</p>
+          <p className="text-lg font-bold text-gray-900">
+            {device.voltage?.toFixed(1) || '0.0'} V
+          </p>
+        </div>
+        <div className="bg-white bg-opacity-50 rounded-lg p-3">
+          <p className="text-xs text-gray-600 mb-1">Current</p>
+          <p className="text-lg font-bold text-gray-900">
+            {device.current?.toFixed(2) || '0.00'} A
+          </p>
+        </div>
+      </div>
+
+      {/* Motor Status */}
+      <div className="mb-4 p-3 bg-white bg-opacity-50 rounded-lg">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-gray-600">Motor Status:</span>
+          <span className={`font-semibold ${isMotorOn ? 'text-green-600' : 'text-gray-600'}`}>
+            {motorStatus === 'unknown' ? 'Unknown' : motorStatus}
           </span>
-          <span className="text-sm text-gray-500 mb-1">current consumption</span>
         </div>
-
-        {/* Data Points Today */}
-        <div className="grid grid-cols-2 gap-4 text-sm mb-3">
-          <div className="text-center bg-white/50 rounded p-2">
-            <div className="text-gray-500">Data Points Today</div>
-            <div className="font-medium text-gray-900">{device.total_data_points_today || 0}</div>
+        {lastCommand && (
+          <div className="text-xs text-gray-500 mt-1">
+            Last command: {lastCommand}
           </div>
-          <div className="text-center bg-white/50 rounded p-2">
-            <div className="text-gray-500">Anomalies Today</div>
-            <div className={`font-medium ${
-              (device.anomaly_count_today || 0) > 0 ? 'text-red-600' : 'text-green-600'
-            }`}>
-              {device.anomaly_count_today || 0}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Status Description */}
-      <div className="mb-4">
-        <p className="text-sm text-gray-600">
-          {device.status === 'online' && 'Device operating normally'}
-          {device.status === 'offline' && 'Device disconnected from network'}
-          {device.status === 'warning' && 'Anomaly detected - monitoring required'}
-          {device.status === 'error' && 'Critical error - immediate attention required'}
-        </p>
-      </div>
-
-      {/* Control Buttons */}
-      <div className="flex gap-2 mb-3">
-        {device.status === 'online' || device.status === 'warning' ? (
-          <Button
-            variant={device.status === 'warning' ? 'danger' : 'outline'}
-            size="sm"
-            fullWidth
-            onClick={() => handleControlClick('disconnect')}
-            icon={<Power className="h-4 w-4" />}
-          >
-            Disconnect
-          </Button>
-        ) : (
-          <Button
-            variant="primary"
-            size="sm"
-            fullWidth
-            onClick={() => handleControlClick('reconnect')}
-            icon={<Power className="h-4 w-4" />}
-          >
-            Reconnect
-          </Button>
         )}
       </div>
 
-      {/* Last Update */}
-      <div className="text-xs text-gray-500 text-center">
-        Last update: {device.latest_timestamp ? formatLastUpdate(device.latest_timestamp) : 'No data'}
-      </div>
-
-      {/* Device Image/Icon */}
-      <div className="flex justify-center mt-3">
-        <div className="w-16 h-12 bg-amber-200 rounded flex items-center justify-center">
-          <div className="w-10 h-8 bg-gray-800 rounded"></div>
+      {/* Anomaly Alert */}
+      {device.anomaly_count && device.anomaly_count > 0 && (
+        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center gap-2">
+          <AlertTriangle className="h-4 w-4 text-yellow-600 flex-shrink-0" />
+          <span className="text-sm text-yellow-800">
+            {device.anomaly_count} anomal{device.anomaly_count === 1 ? 'y' : 'ies'} detected
+          </span>
         </div>
+      )}
+
+      {/* Control Buttons */}
+      <div className="flex gap-2">
+        {isMotorOn ? (
+          <Button
+            variant="danger"
+            size="sm"
+            onClick={() => handleControlClick('disconnect')}
+            disabled={loading || device.status === 'offline'}
+            className="flex-1"
+            icon={loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Power className="h-4 w-4" />}
+          >
+            {loading ? 'Stopping...' : 'Turn OFF'}
+          </Button>
+        ) : (
+          <Button
+            variant="success"
+            size="sm"
+            onClick={() => handleControlClick('reconnect')}
+            disabled={loading || device.status === 'offline'}
+            className="flex-1"
+            icon={loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Power className="h-4 w-4" />}
+          >
+            {loading ? 'Starting...' : 'Turn ON'}
+          </Button>
+        )}
       </div>
 
       {/* Confirmation Modal */}
       <ConfirmModal
         isOpen={showConfirmModal}
-        onClose={() => setShowConfirmModal(false)}
+        onClose={cancelAction}
         onConfirm={confirmAction}
-        title={`${pendingAction === 'disconnect' ? 'Disconnect' : 'Reconnect'} Device`}
-        message={`Are you sure you want to ${pendingAction} ${device.name}?`}
+        title={`${pendingAction === 'disconnect' ? 'Turn OFF' : 'Turn ON'} Motor`}
+        message={`Are you sure you want to ${pendingAction === 'disconnect' ? 'turn OFF' : 'turn ON'} ${device.name}?`}
         type={pendingAction === 'disconnect' ? 'danger' : 'info'}
-        confirmText={pendingAction === 'disconnect' ? 'Disconnect' : 'Reconnect'}
+        confirmText={pendingAction === 'disconnect' ? 'Turn OFF' : 'Turn ON'}
         loading={loading}
       />
     </div>

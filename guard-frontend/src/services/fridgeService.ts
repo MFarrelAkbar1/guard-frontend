@@ -173,6 +173,8 @@ export async function getFridgeStats(fridgeId: string) {
     return {
       todayPowerKwh: todayStats?.total_power_kwh || 0,
       latestPowerWatts: latestReading?.power_consumption || 0,
+      latestVoltage: latestReading?.voltage || 0,
+      latestCurrent: latestReading?.current || 0,
       latestTemperature: latestReading?.temperature || null,
       anomalyCount: anomalyCount || 0,
       dataPointsToday: dataPointsCount || 0,

@@ -107,8 +107,13 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
       updated_at: fridge.updated_at,
       latest_power: stats?.latestPowerWatts || 0,
       latest_timestamp: stats?.lastUpdated || new Date().toISOString(),
+      anomaly_count: stats?.anomalyCount || 0,
       anomaly_count_today: stats?.anomalyCount || 0,
-      total_data_points_today: stats?.dataPointsToday || 0
+      total_data_points_today: stats?.dataPointsToday || 0,
+      current_power: stats?.latestPowerWatts || 0,
+      total_energy: stats?.todayPowerKwh || 0,
+      voltage: stats?.latestVoltage || 0,
+      current: stats?.latestCurrent || 0
     };
   });
 
@@ -304,14 +309,14 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
               </div>
 
               {/* Main Grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {/* Energy Management Cards */}
                 <div className="xl:col-span-2 space-y-4">
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-900 flex items-center">
-                      <Power className="h-5 w-5 mr-2" />
-                      Manajemen Energi
-                    </h2>
+                  <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border dark:border-gray-700">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                    <Power className="h-5 w-5 mr-2 text-gray-700 dark:text-white" />
+                    Manajemen Energi
+                  </h2>
                   </div>
                   
                   <div className="grid gap-4">
