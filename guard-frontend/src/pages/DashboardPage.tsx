@@ -314,8 +314,8 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
                 <div className="xl:col-span-2 space-y-4">
                   <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border dark:border-gray-700">
                   <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
-                    <Power className="h-5 w-5 mr-2 text-gray-700 dark:text-white" />
-                    Manajemen Energi
+                  <Power className="h-5 w-5 mr-2 text-gray-700 dark:text-white" />
+                  Manajemen Energi
                   </h2>
                   </div>
                   
