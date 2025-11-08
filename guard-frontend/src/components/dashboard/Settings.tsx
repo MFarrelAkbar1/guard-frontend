@@ -1,8 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Moon, Sun, Settings as SettingsIcon, Bell, Shield, Database, Mail, Check } from 'lucide-react';
+import { Moon, Sun, Settings as SettingsIcon, Bell, Shield, Database, Mail, Check, Volume2 } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import Button from '../common/Button';
+import {
+  requestNotificationPermission,
+  showTestNotification,
+  getNotificationSettings,
+  saveNotificationSettings,
+  canShowNotifications
+} from '../../services/notificationService';
 
 interface NotificationSettings {
   anomalyAlerts: boolean;
@@ -24,6 +31,8 @@ const Settings: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isTestingEmail, setIsTestingEmail] = useState(false);
   const [testEmailSent, setTestEmailSent] = useState(false);
+  const [isTestingNotification, setIsTestingNotification] = useState(false);
+  const [browserNotificationSettings, setBrowserNotificationSettings] = useState(getNotificationSettings());
 
   const [preferences, setPreferences] = useState<UserPreferences>({
     notifications: {
@@ -84,6 +93,44 @@ const Settings: React.FC = () => {
       console.error('Failed to save preferences:', error);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleBrowserNotificationToggle = async (key: 'enabled' | 'sound') => {
+    if (key === 'enabled' && !browserNotificationSettings.enabled) {
+      // Request permission when enabling
+      const permission = await requestNotificationPermission();
+      if (permission !== 'granted') {
+        alert('Please enable notifications in your browser settings to receive alerts.');
+        return;
+      }
+    }
+
+    const newSettings = {
+      ...browserNotificationSettings,
+      [key]: !browserNotificationSettings[key]
+    };
+    setBrowserNotificationSettings(newSettings);
+    saveNotificationSettings(newSettings);
+  };
+
+  const handleMinSeverityChange = (severity: 'low' | 'medium' | 'high' | 'critical') => {
+    const newSettings = {
+      ...browserNotificationSettings,
+      minSeverity: severity
+    };
+    setBrowserNotificationSettings(newSettings);
+    saveNotificationSettings(newSettings);
+  };
+
+  const handleTestNotification = async () => {
+    setIsTestingNotification(true);
+    try {
+      await showTestNotification();
+    } catch (error) {
+      console.error('Failed to show test notification:', error);
+    } finally {
+      setIsTestingNotification(false);
     }
   };
 
@@ -275,6 +322,126 @@ const Settings: React.FC = () => {
               </Button>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Browser Notification Settings */}
+      <div className="theme-card rounded-lg p-6">
+        <h2 className="text-lg font-semibold theme-text-primary mb-4 flex items-center gap-2">
+          <Bell className="h-5 w-5" />
+          Browser Notifications
+        </h2>
+
+        <div className="space-y-4">
+          {/* Enable Browser Notifications */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-medium theme-text-primary">Enable Browser Notifications</h3>
+              <p className="text-sm theme-text-secondary">
+                {canShowNotifications()
+                  ? 'Get real-time browser notifications for anomaly alerts'
+                  : 'Permission needed to show browser notifications'}
+              </p>
+            </div>
+            <button
+              onClick={() => handleBrowserNotificationToggle('enabled')}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 ${
+                browserNotificationSettings.enabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  browserNotificationSettings.enabled ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* Enable Sound */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-medium theme-text-primary flex items-center gap-2">
+                <Volume2 className="h-4 w-4" />
+                Sound Alerts
+              </h3>
+              <p className="text-sm theme-text-secondary">Play sound when anomalies are detected</p>
+            </div>
+            <button
+              onClick={() => handleBrowserNotificationToggle('sound')}
+              disabled={!browserNotificationSettings.enabled}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 ${
+                browserNotificationSettings.sound && browserNotificationSettings.enabled
+                  ? 'bg-blue-600'
+                  : 'bg-gray-200 dark:bg-gray-600'
+              } ${!browserNotificationSettings.enabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  browserNotificationSettings.sound ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* Minimum Severity */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-medium theme-text-primary">Minimum Severity</h3>
+              <p className="text-sm theme-text-secondary">Only notify for selected severity and above</p>
+            </div>
+            <select
+              value={browserNotificationSettings.minSeverity}
+              onChange={(e) => handleMinSeverityChange(e.target.value as 'low' | 'medium' | 'high' | 'critical')}
+              disabled={!browserNotificationSettings.enabled}
+              className={`border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md px-3 py-1 text-sm ${
+                !browserNotificationSettings.enabled ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+            >
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+              <option value="critical">Critical Only</option>
+            </select>
+          </div>
+
+          {/* Test Notification */}
+          <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-medium theme-text-primary">Test Notification</h3>
+                <p className="text-sm theme-text-secondary">Send a test browser notification and sound</p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleTestNotification}
+                disabled={isTestingNotification || !browserNotificationSettings.enabled}
+                className="flex items-center gap-2"
+              >
+                {isTestingNotification ? (
+                  <>
+                    <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                    Testing...
+                  </>
+                ) : (
+                  <>
+                    <Bell className="h-4 w-4" />
+                    Test Notification
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {/* Browser permission status */}
+          {!canShowNotifications() && browserNotificationSettings.enabled && (
+            <div className="p-3 bg-yellow-50 dark:bg-yellow-900 border border-yellow-200 dark:border-yellow-700 rounded-lg">
+              <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                <strong>Permission Required:</strong> Please allow notifications in your browser to receive anomaly alerts.
+                Click the "Test Notification" button above to grant permission.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 

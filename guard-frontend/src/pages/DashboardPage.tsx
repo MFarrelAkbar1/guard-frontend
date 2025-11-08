@@ -27,6 +27,7 @@ import {
 import { getDashboardStats, getFridges, getRecentAnomalies } from '../services/dashboardService';
 import { getFridgeStats } from '../services/fridgeService';
 import type { DashboardStats, Fridge, Anomaly } from '../types/database';
+import { useAnomalyNotifications } from '../hooks/useAnomalyNotifications';
 
 interface DashboardPageProps {
   onLogout: () => void;
@@ -54,6 +55,9 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
   const userName = user?.user_metadata?.name || 'User';
   const userEmail = user?.email || '';
   const userId = user?.id || 'anonymous';
+
+  // Enable anomaly notifications
+  useAnomalyNotifications(anomalyLogs);
 
   // Fetch dashboard data
   useEffect(() => {
@@ -236,6 +240,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
           userName={userName}
           userEmail={userEmail}
           onViewChange={setCurrentView}
+          recentAnomalies={anomalyLogs}
         />
 
         {/* Page Content */}
