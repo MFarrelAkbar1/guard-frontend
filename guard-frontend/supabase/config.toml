@@ -1,0 +1,6 @@
+# Supabase Configuration for Edge Functions
+
+project_id = "lccrqphxhmoeynwlkwfd"
+
+[functions.send-weekly-report]
+verify_jwt = false

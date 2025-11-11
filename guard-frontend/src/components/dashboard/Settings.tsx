@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Moon, Sun, Settings as SettingsIcon, Bell, Shield, Database, Mail, Check, Volume2 } from 'lucide-react';
+import { Moon, Sun, Settings as SettingsIcon, Bell, Shield, Database, Mail, Check, Volume2, FileText, Download, Send } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import Button from '../common/Button';
@@ -10,6 +10,9 @@ import {
   saveNotificationSettings,
   canShowNotifications
 } from '../../services/notificationService';
+import { generateWeeklyReportData } from '../../services/reportService';
+import { generateAndDownloadWeeklyReport } from '../../services/pdfService';
+import { sendWeeklyReportEmail, sendTestEmail } from '../../services/emailService';
 
 interface NotificationSettings {
   anomalyAlerts: boolean;
@@ -33,6 +36,9 @@ const Settings: React.FC = () => {
   const [testEmailSent, setTestEmailSent] = useState(false);
   const [isTestingNotification, setIsTestingNotification] = useState(false);
   const [browserNotificationSettings, setBrowserNotificationSettings] = useState(getNotificationSettings());
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [isSendingReport, setIsSendingReport] = useState(false);
+  const [reportStatus, setReportStatus] = useState<{ type: 'success' | 'error' | null; message: string }>({ type: null, message: '' });
 
   const [preferences, setPreferences] = useState<UserPreferences>({
     notifications: {
@@ -135,48 +141,105 @@ const Settings: React.FC = () => {
   };
 
   const handleTestEmail = async () => {
+    if (!user?.email) {
+      alert('No email address found for current user.');
+      return;
+    }
+
     setIsTestingEmail(true);
     setTestEmailSent(false);
 
     try {
-      // Check if we're in development mode
-      if (process.env.REACT_APP_NODE_ENV === 'development') {
-        // Simulate email sending for development
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        alert(`Development Mode: Mock email sent to ${user?.email}\n\nIn production, configure SMTP in Supabase Settings → Auth → SMTP Settings to enable real email notifications.`);
+      const result = await sendTestEmail(user.email);
+
+      if (result.success) {
         setTestEmailSent(true);
+        setTimeout(() => setTestEmailSent(false), 3000);
       } else {
-        // In production, you would call your API endpoint that handles email sending
-        // Example using Supabase Functions or your own backend:
-
-        const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/send-test-email`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            to: user?.email,
-            subject: 'GUARD Test Email',
-            message: 'This is a test email from your GUARD system.'
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to send email');
-        }
-
-        setTestEmailSent(true);
+        alert(result.message);
       }
-
-      // Reset success message after 3 seconds
-      setTimeout(() => {
-        setTestEmailSent(false);
-      }, 3000);
     } catch (error) {
       console.error('Failed to send test email:', error);
       alert('Failed to send test email. Please check your email configuration.');
     } finally {
       setIsTestingEmail(false);
+    }
+  };
+
+  const handleGenerateReport = async () => {
+    setIsGeneratingReport(true);
+    setReportStatus({ type: null, message: '' });
+
+    try {
+      // Generate report data
+      const reportData = await generateWeeklyReportData();
+
+      // Generate and download PDF
+      await generateAndDownloadWeeklyReport(reportData);
+
+      setReportStatus({
+        type: 'success',
+        message: 'Weekly report generated and downloaded successfully!'
+      });
+
+      // Clear status after 5 seconds
+      setTimeout(() => {
+        setReportStatus({ type: null, message: '' });
+      }, 5000);
+
+    } catch (error) {
+      console.error('Error generating report:', error);
+      setReportStatus({
+        type: 'error',
+        message: `Failed to generate report: ${error instanceof Error ? error.message : 'Unknown error'}`
+      });
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  };
+
+  const handleSendReportEmail = async () => {
+    if (!user?.email) {
+      console.error('No email found for user:', user);
+      setReportStatus({
+        type: 'error',
+        message: 'No email address found for current user. Please check your profile.'
+      });
+      return;
+    }
+
+    setIsSendingReport(true);
+    setReportStatus({ type: null, message: '' });
+
+    try {
+      const reportData = await generateWeeklyReportData();
+      const { generateWeeklyReportPDF } = await import('../../services/pdfService');
+      const pdfBlob = await generateWeeklyReportPDF(reportData);
+      const result = await sendWeeklyReportEmail(user.email, reportData, pdfBlob);
+
+      setReportStatus({
+        type: result.success ? 'success' : 'error',
+        message: result.message
+      });
+
+      // Clear status after 8 seconds (longer to read the message)
+      setTimeout(() => {
+        setReportStatus({ type: null, message: '' });
+      }, 8000);
+
+    } catch (error) {
+      console.error('Error sending report:', error);
+      setReportStatus({
+        type: 'error',
+        message: `Failed to send report: ${error instanceof Error ? error.message : 'Unknown error'}`
+      });
+
+      // Keep error message visible longer
+      setTimeout(() => {
+        setReportStatus({ type: null, message: '' });
+      }, 10000);
+    } finally {
+      setIsSendingReport(false);
     }
   };
 
@@ -290,11 +353,6 @@ const Settings: React.FC = () => {
                 <p className="text-sm theme-text-secondary">
                   Test email notifications to: <span className="font-medium">{user?.email}</span>
                 </p>
-                {process.env.REACT_APP_NODE_ENV === 'development' && (
-                  <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
-                    Development mode: SMTP configuration required for production emails
-                  </p>
-                )}
               </div>
               <Button
                 variant="outline"
@@ -478,6 +536,117 @@ const Settings: React.FC = () => {
               <option>2 hours</option>
               <option>Never</option>
             </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Weekly Reports */}
+      <div className="theme-card rounded-lg p-6">
+        <h2 className="text-lg font-semibold theme-text-primary mb-4 flex items-center gap-2">
+          <FileText className="h-5 w-5" />
+          Weekly Reports
+        </h2>
+
+        <div className="space-y-4">
+          {/* Report Status Message */}
+          {reportStatus.type && (
+            <div className={`p-3 rounded-lg border ${
+              reportStatus.type === 'success'
+                ? 'bg-green-50 dark:bg-green-900 border-green-200 dark:border-green-700'
+                : 'bg-red-50 dark:bg-red-900 border-red-200 dark:border-red-700'
+            }`}>
+              <p className={`text-sm ${
+                reportStatus.type === 'success'
+                  ? 'text-green-800 dark:text-green-200'
+                  : 'text-red-800 dark:text-red-200'
+              }`}>
+                {reportStatus.message}
+              </p>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-medium theme-text-primary">Generate Weekly Report</h3>
+              <p className="text-sm theme-text-secondary">
+                Download a PDF summary of the last 7 days
+              </p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                Includes: Power consumption, anomalies, device health, and cost analysis
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleGenerateReport}
+              disabled={isGeneratingReport}
+              className="flex items-center gap-2"
+            >
+              {isGeneratingReport ? (
+                <>
+                  <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4" />
+                  Download PDF
+                </>
+              )}
+            </Button>
+          </div>
+
+          <div className="pt-4 border-t border-gray-200 dark:border-gray-700 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-medium theme-text-primary">Email Weekly Report</h3>
+                <p className="text-sm theme-text-secondary">
+                  Send report to: <span className="font-medium">{user?.email}</span>
+                </p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                  Report will be sent as a PDF attachment
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSendReportEmail}
+                disabled={isSendingReport || !user?.email}
+                className="flex items-center gap-2"
+              >
+                {isSendingReport ? (
+                  <>
+                    <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4" />
+                    Send via Email
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-medium theme-text-primary">Automatic Weekly Reports</h3>
+                <p className="text-sm theme-text-secondary">
+                  Automatically generate and email reports every week
+                </p>
+                <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                  Coming soon - Requires backend scheduler configuration
+                </p>
+              </div>
+              <button
+                disabled
+                className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 dark:bg-gray-600 opacity-50 cursor-not-allowed"
+              >
+                <span className="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-1" />
+              </button>
+            </div>
           </div>
         </div>
       </div>

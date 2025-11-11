@@ -1,7 +1,15 @@
 // src/services/motorControlService.ts
 
-const NODE_RED_API_URL = process.env.REACT_APP_NODE_RED_API_URL || 'http://localhost:1880';
-const API_KEY = process.env.REACT_APP_MOTOR_API_KEY || 'your-secret-api-key-here-change-me';
+const NODE_RED_API_URL = process.env.REACT_APP_NODE_RED_API_URL;
+const API_KEY = process.env.REACT_APP_MOTOR_API_KEY;
+
+if (!NODE_RED_API_URL) {
+  throw new Error('REACT_APP_NODE_RED_API_URL is not configured');
+}
+
+if (!API_KEY) {
+  throw new Error('REACT_APP_MOTOR_API_KEY is not configured');
+}
 
 export interface MotorControlRequest {
   device_id: string;

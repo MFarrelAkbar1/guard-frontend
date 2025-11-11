@@ -93,12 +93,10 @@ const EnergyCard: React.FC<EnergyCardProps> = ({
     try {
       // Map UI action to MQTT command
       const command = pendingAction === 'disconnect' ? 'OFF' : 'ON';
-      
+
       // Send command via Node-RED API
       const response = await controlMotor(device.id, command);
-      
-      console.log('Motor control response:', response);
-      
+
       // Update local state
       setMotorStatus(command);
       setLastCommand(command);

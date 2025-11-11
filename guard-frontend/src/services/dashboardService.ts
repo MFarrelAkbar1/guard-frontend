@@ -41,42 +41,61 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 
     const fridgeCount = fridges?.length || 0;
 
-    // Get today's daily stats
-    const { data: todayStats, error: todayError } = await supabase
-      .from('daily_stats')
-      .select('total_power_kwh')
-      .eq('date', today);
+    // Get today's power readings (calculate from power_readings instead of daily_stats)
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
 
-    if (todayError) throw todayError;
+    const { data: todayReadings, error: todayError } = await supabase
+      .from('power_readings')
+      .select('power_consumption, recorded_at')
+      .gte('recorded_at', todayStart.toISOString());
 
-    const totalPowerToday = todayStats?.reduce((sum, stat) => sum + Number(stat.total_power_kwh), 0) || 0;
+    if (todayError) console.error('Error fetching today readings:', todayError);
+
+    // Calculate total power today (sum of all power readings in Wh, convert to kWh)
+    const totalPowerToday = todayReadings
+      ? todayReadings.reduce((sum, reading) => sum + Number(reading.power_consumption), 0) / 1000
+      : 0;
 
     // Get yesterday's stats for trend
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    yesterday.setHours(0, 0, 0, 0);
+    const todayStartTime = new Date();
+    todayStartTime.setHours(0, 0, 0, 0);
 
-    const { data: yesterdayStats, error: yesterdayError } = await supabase
-      .from('daily_stats')
-      .select('total_power_kwh')
-      .eq('date', yesterdayStr);
+    const { data: yesterdayReadings, error: yesterdayError } = await supabase
+      .from('power_readings')
+      .select('power_consumption')
+      .gte('recorded_at', yesterday.toISOString())
+      .lt('recorded_at', todayStartTime.toISOString());
 
-    if (yesterdayError) throw yesterdayError;
+    if (yesterdayError) console.error('Error fetching yesterday readings:', yesterdayError);
 
-    const totalPowerYesterday = yesterdayStats?.reduce((sum, stat) => sum + Number(stat.total_power_kwh), 0) || 0;
+    const totalPowerYesterday = yesterdayReadings
+      ? yesterdayReadings.reduce((sum, reading) => sum + Number(reading.power_consumption), 0) / 1000
+      : 0;
 
     // Calculate trend
     const trendValue = totalPowerYesterday > 0
       ? ((totalPowerToday - totalPowerYesterday) / totalPowerYesterday) * 100
       : 0;
 
-    // Get weekly anomalies count
-    const { count: weeklyAnomaliesCount, error: anomaliesError } = await supabase
-      .from('anomalies')
-      .select('*', { count: 'exact', head: true })
-      .gte('detected_at', weekAgoStr);
+    // Get weekly anomalies count (try anomalies table, fallback to 0 if it doesn't exist)
+    let weeklyAnomaliesCount = 0;
+    try {
+      const { count, error: anomaliesError } = await supabase
+        .from('anomalies')
+        .select('*', { count: 'exact', head: true })
+        .gte('detected_at', weekAgoStr);
 
-    if (anomaliesError) throw anomaliesError;
+      if (!anomaliesError) {
+        weeklyAnomaliesCount = count || 0;
+      }
+    } catch (error) {
+      // Anomalies table might not exist, default to 0
+      console.warn('Anomalies table query failed, defaulting to 0');
+    }
 
     // Calculate efficiency (current power vs design power)
     let efficiency = 100;
@@ -296,11 +315,14 @@ export async function getRecentAnomalies(limit: number = 10): Promise<Anomaly[]>
       .order('detected_at', { ascending: false })
       .limit(limit);
 
-    if (error) throw error;
+    if (error) {
+      console.warn('Anomalies table query failed:', error);
+      return []; // Return empty array if anomalies table doesn't exist or has no data
+    }
     return (data || []) as unknown as Anomaly[];
   } catch (error) {
     console.error('Error fetching recent anomalies:', error);
-    throw error;
+    return []; // Return empty array on error
   }
 }
 

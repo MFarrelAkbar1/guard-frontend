@@ -27,12 +27,22 @@ yarn-error.log*
 /backend/.env
 /backend/.env
 
-# Documentation files (except README.md)
+# Documentation files (only keep README.md)
 *.md
 !README.md
+!supabase/README.md
+
+# Database and misc files
 *.txt
 *.sql
+database/
+docs/
+backend/
 
 # Claude and temporary files
 .claude/
 nul
+
+# Supabase temporary files
+supabase/.temp/
+supabase/.branches/

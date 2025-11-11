@@ -129,24 +129,11 @@ const EnergyChart: React.FC<EnergyChartProps> = ({
   return (
     <div className={`bg-white rounded-lg p-6 shadow-sm border ${className}`}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-2">
-          <TrendingUp className="h-5 w-5 text-blue-600" />
-          <h2 className="text-lg font-semibold text-gray-900">
-            Pengeluaran Energi
-          </h2>
-        </div>
-        
-        {showControls && (
-          <Button
-            variant="outline"
-            size="sm"
-            icon={<Download className="h-4 w-4" />}
-            onClick={() => console.log('Export data')}
-          >
-            Export
-          </Button>
-        )}
+      <div className="flex items-center gap-2 mb-6">
+        <TrendingUp className="h-5 w-5 text-blue-600" />
+        <h2 className="text-lg font-semibold text-gray-900">
+          Pengeluaran Energi
+        </h2>
       </div>
 
       {/* Controls */}

@@ -117,7 +117,6 @@ function getSeverityInfo(severity: string): { emoji: string; urgency: Notificati
  */
 export async function showAnomalyNotification(anomaly: Anomaly, deviceName?: string): Promise<void> {
   if (!canShowNotifications()) {
-    console.log('Notifications not permitted');
     return;
   }
 
