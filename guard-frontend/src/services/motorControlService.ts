@@ -1,7 +1,7 @@
 // src/services/motorControlService.ts
 
-const NODE_RED_API_URL = process.env.REACT_APP_NODE_RED_API_URL;
-const API_KEY = process.env.REACT_APP_MOTOR_API_KEY;
+const NODE_RED_API_URL = process.env.REACT_APP_NODE_RED_API_URL || 'http://localhost:1880';
+const API_KEY = process.env.REACT_APP_MOTOR_API_KEY || 'testkey2025simple';
 
 if (!NODE_RED_API_URL) {
   throw new Error('REACT_APP_NODE_RED_API_URL is not configured');
@@ -48,16 +48,20 @@ export const controlMotor = async (
   command: 'ON' | 'OFF'
 ): Promise<MotorControlResponse> => {
   try {
-    const response = await fetch(`${NODE_RED_API_URL}/api/motor/control`, {
+    const url = `${NODE_RED_API_URL}/api/motor/control`;
+    const headers = {
+      'Content-Type': 'application/json',
+      'x-api-key': API_KEY,
+    };
+    const body = {
+      device_id: deviceId,
+      command: command,
+    };
+
+    const response = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': API_KEY,
-      },
-      body: JSON.stringify({
-        device_id: deviceId,
-        command: command,
-      }),
+      headers: headers,
+      body: JSON.stringify(body),
     });
 
     const data = await response.json();

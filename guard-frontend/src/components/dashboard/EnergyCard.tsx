@@ -205,7 +205,7 @@ const EnergyCard: React.FC<EnergyCardProps> = ({
             variant="danger"
             size="sm"
             onClick={() => handleControlClick('disconnect')}
-            disabled={loading || device.status === 'offline'}
+            disabled={loading}
             className="flex-1"
             icon={loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Power className="h-4 w-4" />}
           >
@@ -216,7 +216,7 @@ const EnergyCard: React.FC<EnergyCardProps> = ({
             variant="success"
             size="sm"
             onClick={() => handleControlClick('reconnect')}
-            disabled={loading || device.status === 'offline'}
+            disabled={loading}
             className="flex-1"
             icon={loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Power className="h-4 w-4" />}
           >

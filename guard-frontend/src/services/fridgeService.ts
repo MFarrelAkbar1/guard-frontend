@@ -133,7 +133,7 @@ export async function getFridgeStats(fridgeId: string) {
       .select('*')
       .eq('fridge_id', fridgeId)
       .eq('date', today)
-      .single();
+      .maybeSingle();
 
     if (statsError && statsError.code !== 'PGRST116') {
       throw statsError;
@@ -146,7 +146,7 @@ export async function getFridgeStats(fridgeId: string) {
       .eq('fridge_id', fridgeId)
       .order('recorded_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (readingError && readingError.code !== 'PGRST116') {
       throw readingError;
