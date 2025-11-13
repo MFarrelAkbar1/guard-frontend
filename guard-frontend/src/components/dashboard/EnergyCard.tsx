@@ -5,7 +5,8 @@ import { Power, AlertTriangle, CheckCircle, Wifi, WifiOff, Loader2 } from 'lucid
 import Button from '../common/Button';
 import { ConfirmModal } from '../common/Modal';
 import { DeviceWithStats } from '../../types/database';
-import { controlMotor, getMotorStatus } from '../../services/motorControlService';
+import { controlMotor } from '../../services/motorControlService';
+import { getLatestSSRState } from '../../services/fridgeService';
 
 interface EnergyCardProps {
   device: DeviceWithStats;
@@ -21,8 +22,40 @@ const EnergyCard: React.FC<EnergyCardProps> = ({
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<'disconnect' | 'reconnect' | null>(null);
   const [loading, setLoading] = useState(false);
-  const [motorStatus, setMotorStatus] = useState<'ON' | 'OFF' | 'unknown'>('unknown');
+
+  // Get initial motor status from database SSR state or localStorage fallback
+  const getInitialMotorStatus = (): 'ON' | 'OFF' | 'unknown' => {
+    const saved = localStorage.getItem(`motor_status_${device.id}`);
+    return (saved as 'ON' | 'OFF') || 'unknown';
+  };
+
+  const [motorStatus, setMotorStatus] = useState<'ON' | 'OFF' | 'unknown'>(getInitialMotorStatus);
   const [lastCommand, setLastCommand] = useState<string>('');
+
+  // Fetch latest SSR state from database on mount and periodically
+  useEffect(() => {
+    const fetchSSRState = async () => {
+      try {
+        const ssrState = await getLatestSSRState(device.id);
+        if (ssrState !== null && ssrState !== undefined) {
+          const newStatus = ssrState === 1 ? 'ON' : 'OFF';
+          setMotorStatus(newStatus);
+          // Update localStorage to keep it in sync
+          localStorage.setItem(`motor_status_${device.id}`, newStatus);
+        }
+      } catch (error) {
+        console.error('Failed to fetch SSR state:', error);
+      }
+    };
+
+    // Fetch immediately on mount
+    fetchSSRState();
+
+    // Update every 5 seconds to sync with dashboard refresh
+    const interval = setInterval(fetchSSRState, 5000);
+
+    return () => clearInterval(interval);
+  }, [device.id]);
 
   // Status configurations
   const statusConfig = {
@@ -58,25 +91,9 @@ const EnergyCard: React.FC<EnergyCardProps> = ({
 
   const config = statusConfig[device.status];
 
-  // Fetch motor status on component mount and periodically
-  useEffect(() => {
-    fetchMotorStatus();
-    
-    // Poll status every 10 seconds
-    const interval = setInterval(fetchMotorStatus, 10000);
-    
-    return () => clearInterval(interval);
-  }, [device.id]);
-
-  const fetchMotorStatus = async () => {
-    try {
-      const status = await getMotorStatus(device.id);
-      setMotorStatus(status.last_command as 'ON' | 'OFF' | 'unknown');
-      setLastCommand(status.last_command);
-    } catch (error) {
-      console.error('Failed to fetch motor status:', error);
-    }
-  };
+  // Motor status is now persisted in localStorage
+  // No need to poll Node-RED API - status persists across refreshes
+  // The status is updated when user clicks ON/OFF buttons
 
   // Handle device control via Node-RED API
   const handleControlClick = (action: 'disconnect' | 'reconnect') => {
@@ -97,18 +114,20 @@ const EnergyCard: React.FC<EnergyCardProps> = ({
       // Send command via Node-RED API
       const response = await controlMotor(device.id, command);
 
-      // Update local state
+      // Update local state and save to localStorage
       setMotorStatus(command);
       setLastCommand(command);
-      
+      localStorage.setItem(`motor_status_${device.id}`, command);
+
       // Call parent callback if provided (for UI updates)
       onControlDevice?.(device.id, pendingAction);
-      
-      // Show success message (you can implement a toast notification here)
-      alert(`Success: ${response.message}`);
-      
+
+      // Success - no popup needed, button state change is visual feedback
+      console.log(`✅ Success: ${response.message}`);
+
     } catch (error) {
       console.error('Failed to control motor:', error);
+      // Only show error popup
       alert(`Failed to ${pendingAction} motor. Please try again.`);
     } finally {
       setLoading(false);

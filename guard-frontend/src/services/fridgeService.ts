@@ -121,6 +121,30 @@ export async function deleteFridge(id: string): Promise<void> {
 }
 
 /**
+ * Get the latest SSR state (motor ON/OFF status) from power readings
+ */
+export async function getLatestSSRState(fridgeId: string): Promise<number | null> {
+  try {
+    const { data, error } = await supabase
+      .from('power_readings')
+      .select('ssr_state')
+      .eq('fridge_id', fridgeId)
+      .order('recorded_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error && error.code !== 'PGRST116') {
+      throw error;
+    }
+
+    return data?.ssr_state ?? null;
+  } catch (error) {
+    console.error('Error fetching SSR state:', error);
+    return null;
+  }
+}
+
+/**
  * Get fridge statistics
  */
 export async function getFridgeStats(fridgeId: string) {
@@ -176,6 +200,7 @@ export async function getFridgeStats(fridgeId: string) {
       latestVoltage: latestReading?.voltage || 0,
       latestCurrent: latestReading?.current || 0,
       latestTemperature: latestReading?.temperature || null,
+      latestSSRState: latestReading?.ssr_state ?? null,
       anomalyCount: anomalyCount || 0,
       dataPointsToday: dataPointsCount || 0,
       lastUpdated: latestReading?.recorded_at || null

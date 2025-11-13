@@ -212,6 +212,7 @@ export interface Database {
           voltage: number | null
           current: number | null
           temperature: number | null
+          ssr_state: number | null
           recorded_at: string
           created_at: string
         }
@@ -222,6 +223,7 @@ export interface Database {
           voltage?: number | null
           current?: number | null
           temperature?: number | null
+          ssr_state?: number | null
           recorded_at: string
           created_at?: string
         }
@@ -232,6 +234,7 @@ export interface Database {
           voltage?: number | null
           current?: number | null
           temperature?: number | null
+          ssr_state?: number | null
           recorded_at?: string
           created_at?: string
         }
