@@ -71,9 +71,6 @@ export const controlMotor = async (
       state: command, // Edge Function expects 'state' not 'command'
     };
 
-    console.log(`[Motor Control] Calling Edge Function: ${url}`);
-    console.log(`[Motor Control] Device: ${deviceId}, State: ${command}`);
-
     const response = await fetch(url, {
       method: 'POST',
       headers: headers,
