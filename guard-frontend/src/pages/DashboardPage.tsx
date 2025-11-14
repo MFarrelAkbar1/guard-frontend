@@ -90,8 +90,8 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
 
     fetchDashboardData();
 
-    // Refresh data every minute
-    const interval = setInterval(fetchDashboardData, 60000);
+    // Refresh data every 5 seconds for real-time updates
+    const interval = setInterval(fetchDashboardData, 5000);
     return () => clearInterval(interval);
   }, []);
 
