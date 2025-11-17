@@ -1,8 +1,8 @@
 // Database types matching PostgreSQL schema
 
 export type FridgeStatus = 'active' | 'inactive' | 'maintenance';
-export type AnomalyType = 'power_surge' | 'short_circuit' | 'overheating' | 'voltage_drop' | 'compressor_failure';
-export type AnomalySeverity = 'low' | 'medium' | 'high' | 'critical';
+export type AnomalyType = 'power_spike' | 'phase_too_short' | 'phase_too_long' | 'power_deviation' | 'duration_exceeded' | 'critical_combined';
+export type AnomalySeverity = 'normal' | 'warning' | 'critical';
 export type AnomalyStatus = 'active' | 'resolved' | 'ignored';
 
 // Legacy types for backward compatibility
@@ -61,14 +61,26 @@ export interface PowerReading {
   created_at: string;
 }
 
+export interface MotorStatus {
+  id: number;
+  fridge_id: string;
+  ssr_state: number;  // 0 = OFF, 1 = ON
+  recorded_at: string;
+  created_at: string;
+}
+
 export interface Anomaly {
   id: string;
   fridge_id: string;
-  user_id: string;
+  user_id: string | null;
   type: AnomalyType;
   severity: AnomalySeverity;
   description: string | null;
-  power_reading_id: string | null;
+  power_value: number | null;
+  expected_value: number | null;
+  mae_value: number | null;
+  phase: string | null;
+  phase_duration: number | null;
   detected_at: string;
   resolved_at: string | null;
   status: AnomalyStatus;

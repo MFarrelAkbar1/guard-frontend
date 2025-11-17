@@ -125,6 +125,20 @@ export async function deleteFridge(id: string): Promise<void> {
  */
 export async function getLatestSSRState(fridgeId: string): Promise<number | null> {
   try {
+    // First try to get from motor_status table (rapid updates)
+    const { data: motorData, error: motorError } = await (supabase as any)
+      .from('motor_status')
+      .select('ssr_state')
+      .eq('fridge_id', fridgeId)
+      .order('recorded_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (!motorError && motorData?.ssr_state !== undefined) {
+      return motorData.ssr_state;
+    }
+
+    // Fallback to power_readings table (throttled updates)
     const { data, error } = await supabase
       .from('power_readings')
       .select('ssr_state')

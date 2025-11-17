@@ -5,14 +5,13 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import mqtt from "npm:mqtt@5.3.5"
 
-// TEMPORARY: Using HiveMQ because test.mosquitto.org is DOWN (connack timeout)
-// TODO: Switch back to mosquitto when hardware team confirms it's working
-// FIXED: Changed to TCP to match Node-RED connection (was WebSocket before)
-const MQTT_BROKER = "mqtt://broker.hivemq.com:1883"
+// FIXED: Now using test.mosquitto.org (hardware broker)
+// Previous: broker.hivemq.com (temporary when mosquitto was down)
+const MQTT_BROKER = "mqtt://test.mosquitto.org:1883"
 
-// ORIGINAL mosquitto config (restore this when mosquitto is back up):
-// const MQTT_BROKER = "mqtt://test.mosquitto.org:1883" // TCP (matches Node-RED)
-// const MQTT_BROKER = "ws://test.mosquitto.org:8080" // WebSocket (doesn't work with Node-RED TCP)
+// Alternative brokers (not currently used):
+// const MQTT_BROKER = "mqtt://broker.hivemq.com:1883"
+// const MQTT_BROKER = "ws://test.mosquitto.org:8080" // WebSocket
 
 const MQTT_TOPIC = "/motor/control"
 const API_KEY = "korsletzilanomagon05"
