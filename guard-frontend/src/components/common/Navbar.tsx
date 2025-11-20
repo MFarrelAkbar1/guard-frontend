@@ -220,7 +220,7 @@ const Navbar: React.FC<NavbarProps> = ({
 
             {/* Notification Dropdown */}
             {showNotifications && (
-              <div className="absolute right-0 mt-2 w-96 max-w-[calc(100vw-2rem)] theme-card rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50 max-h-[32rem] flex flex-col">
+              <div className="absolute right-0 mt-2 w-80 sm:w-96 max-w-[calc(100vw-2rem)] theme-card rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50 max-h-[28rem] sm:max-h-[32rem] flex flex-col">
                 {/* Header */}
                 <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                   <div className="flex items-center justify-between">

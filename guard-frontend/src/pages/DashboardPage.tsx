@@ -273,7 +273,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
               </div>
 
               {/* Stats Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <StatsCard
                   title="Daily Total Power"
                   value={statsData ? `${statsData.total_power_today_kwh.toFixed(2)} kWh` : 'Loading...'}
@@ -304,12 +304,14 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
                   onClick={() => setCurrentView('anomaly')}
                 />
 
+                {/* Hidden - Keep code but don't display */}
                 <StatsCard
                   title="Cost Savings"
                   value={statsData ? `Rp ${statsData.cost_savings_idr.toLocaleString('id-ID')}` : 'Loading...'}
                   subtitle="Total savings estimate"
                   icon={Zap}
                   color="purple"
+                  className="hidden"
                 />
               </div>
 
@@ -525,8 +527,8 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
                 </div>
               </div>
             </div>
-          ) : currentView === 'fridges' ? (
-            // FRIDGES VIEW
+          ) : currentView === 'devices' ? (
+            // DEVICES VIEW
             <FridgeManagement
               fridges={fridges}
               fridgeStats={fridgeStats}
