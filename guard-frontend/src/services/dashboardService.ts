@@ -264,6 +264,36 @@ export async function getEnergyChartData(): Promise<EnergyChartData> {
 }
 
 /**
+ * Get data point counts for calendar (count of power_readings per day)
+ */
+export async function getDataPointCountsForCalendar(month: number, year: number): Promise<Map<string, number>> {
+  try {
+    const startDate = new Date(year, month, 1).toISOString();
+    const endDate = new Date(year, month + 1, 0, 23, 59, 59).toISOString();
+
+    const { data, error } = await supabase
+      .from('power_readings')
+      .select('recorded_at')
+      .gte('recorded_at', startDate)
+      .lte('recorded_at', endDate);
+
+    if (error) throw error;
+
+    // Group by date and count
+    const countsByDate = new Map<string, number>();
+    data?.forEach(reading => {
+      const date = reading.recorded_at.split('T')[0];
+      countsByDate.set(date, (countsByDate.get(date) || 0) + 1);
+    });
+
+    return countsByDate;
+  } catch (error) {
+    console.error('Error fetching data point counts for calendar:', error);
+    throw error;
+  }
+}
+
+/**
  * Get anomalies for calendar
  */
 export async function getAnomaliesForCalendar(month: number, year: number): Promise<Map<string, Anomaly[]>> {

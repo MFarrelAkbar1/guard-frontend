@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Calendar, ChevronDown } from 'lucide-react';
 import { CalendarDayData, Anomaly } from '../../types/database';
-import { getAnomaliesForCalendar } from '../../services/dashboardService';
+import { getAnomaliesForCalendar, getDataPointCountsForCalendar } from '../../services/dashboardService';
 import AnomalyDetailModal from './AnomalyDetailModal';
 
 interface AnomalyCalendarProps {
@@ -21,24 +21,32 @@ const AnomalyCalendar: React.FC<AnomalyCalendarProps> = ({
   const [showMonthPicker, setShowMonthPicker] = useState(false);
   const [showYearPicker, setShowYearPicker] = useState(false);
   const [anomaliesMap, setAnomaliesMap] = useState<Map<string, Anomaly[]>>(new Map());
+  const [dataPointCountsMap, setDataPointCountsMap] = useState<Map<string, number>>(new Map());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedAnomalies, setSelectedAnomalies] = useState<Anomaly[]>([]);
   const [showModal, setShowModal] = useState(false);
 
-  // Fetch anomalies for current month
+  // Fetch anomalies and data point counts for current month
   useEffect(() => {
-    const fetchAnomalies = async () => {
+    const fetchCalendarData = async () => {
       try {
         const month = currentMonth.getMonth();
         const year = currentMonth.getFullYear();
-        const anomalies = await getAnomaliesForCalendar(month, year);
+
+        // Fetch both anomalies and data point counts in parallel
+        const [anomalies, dataPointCounts] = await Promise.all([
+          getAnomaliesForCalendar(month, year),
+          getDataPointCountsForCalendar(month, year)
+        ]);
+
         setAnomaliesMap(anomalies);
+        setDataPointCountsMap(dataPointCounts);
       } catch (error) {
-        console.error('Error fetching anomalies:', error);
+        console.error('Error fetching calendar data:', error);
       }
     };
 
-    fetchAnomalies();
+    fetchCalendarData();
   }, [currentMonth]);
 
   const monthNames = [
@@ -60,21 +68,24 @@ const AnomalyCalendar: React.FC<AnomalyCalendarProps> = ({
 
     // Check database anomalies for this date
     const dayAnomalies = anomaliesMap.get(dateStr) || [];
-    if (dayAnomalies.length > 0) {
+    const dataPointCount = dataPointCountsMap.get(dateStr) || 0;
+
+    // Only show day data if we have either anomalies or data points
+    if (dayAnomalies.length > 0 || dataPointCount > 0) {
       // Calculate max severity from actual anomalies
-      const severityOrder: Record<string, number> = { low: 1, medium: 2, high: 3, critical: 4 };
-      const maxSeverity = dayAnomalies.reduce<'low' | 'medium' | 'high' | 'critical'>((max, anomaly) => {
+      const severityOrder: Record<string, number> = { normal: 1, warning: 2, critical: 3 };
+      const maxSeverity = dayAnomalies.reduce<'normal' | 'warning' | 'critical'>((max, anomaly) => {
         const currentLevel = severityOrder[anomaly.severity] || 0;
         const maxLevel = severityOrder[max] || 0;
-        return currentLevel > maxLevel ? (anomaly.severity as 'low' | 'medium' | 'high' | 'critical') : max;
-      }, 'low');
+        return currentLevel > maxLevel ? (anomaly.severity as 'normal' | 'warning' | 'critical') : max;
+      }, 'normal');
 
       return {
         date: dateStr,
-        total_data_points: 144, // Default value
+        total_data_points: dataPointCount, // Use actual count from database
         anomaly_count: dayAnomalies.length,
-        max_severity: maxSeverity,
-        has_data: true
+        max_severity: maxSeverity as any,  // Type cast for backward compatibility
+        has_data: dataPointCount > 0
       };
     }
 
@@ -310,16 +321,20 @@ const AnomalyCalendar: React.FC<AnomalyCalendarProps> = ({
           return (
             <div
               key={day}
-              className={`relative p-1.5 hover:bg-gray-50 rounded cursor-pointer transition-colors ${
+              className={`relative p-1.5 hover:bg-gray-50 rounded cursor-pointer transition-colors group ${
                 isToday ? 'bg-blue-50 text-blue-600 font-medium' : ''
               } ${!dayData?.has_data ? 'opacity-50' : ''}`}
               onClick={() => handleDateClick(day)}
-              title={dayData ?
-                `${dayData.total_data_points} data points, ${dayData.anomaly_count} anomalies` :
-                'No data available'
-              }
             >
               <span className="text-sm">{day}</span>
+
+              {/* Custom CSS Tooltip */}
+              {dayData && (
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                  {dayData.total_data_points} data points, {dayData.anomaly_count} anomalies
+                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                </div>
+              )}
 
               {/* Data availability indicator */}
               {dayData?.has_data && (
