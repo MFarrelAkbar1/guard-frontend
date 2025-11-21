@@ -345,13 +345,13 @@ const AnomalyCalendar: React.FC<AnomalyCalendarProps> = ({
 
               {/* Anomaly Indicator */}
               {dayData?.anomaly_count && dayData.anomaly_count > 0 && dayData.max_severity && (
-                <div className="absolute top-0 right-0 flex items-center">
+                <div className="absolute top-0 right-0 flex items-center gap-0.5">
                   <div
-                    className={`w-2 h-2 rounded-full ${getSeverityColor(dayData.max_severity)}`}
+                    className={`w-1.5 h-1.5 rounded-full ${getSeverityColor(dayData.max_severity)}`}
                   />
-                  {dayData.anomaly_count > 1 && (
-                    <span className="text-xs font-bold text-red-600 ml-1">
-                      {dayData.anomaly_count}
+                  {dayData.anomaly_count > 0 && (
+                    <span className="text-[10px] font-semibold text-red-600 leading-none">
+                      {dayData.anomaly_count > 99 ? '99+' : dayData.anomaly_count}
                     </span>
                   )}
                 </div>
