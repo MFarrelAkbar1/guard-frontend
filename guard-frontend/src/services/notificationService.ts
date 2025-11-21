@@ -21,7 +21,10 @@ function getAudioContext(): AudioContext {
 /**
  * Play notification sound based on severity
  */
-export async function playNotificationSound(severity: 'low' | 'medium' | 'high' | 'critical' = 'medium'): Promise<void> {
+export async function playNotificationSound(
+  severity: 'low' | 'medium' | 'high' | 'critical' = 'medium',
+  beepCount: number = 0
+): Promise<void> {
   try {
     // Check if sound is enabled in settings
     const settings = getNotificationSettings();
@@ -57,9 +60,9 @@ export async function playNotificationSound(severity: 'low' | 'medium' | 'high' 
     oscillator.start(context.currentTime);
     oscillator.stop(context.currentTime + 0.5);
 
-    // For critical, play multiple beeps
-    if (severity === 'critical') {
-      setTimeout(() => playNotificationSound('critical'), 600);
+    // For critical, play 3 beeps total
+    if (severity === 'critical' && beepCount < 2) {
+      setTimeout(() => playNotificationSound('critical', beepCount + 1), 600);
     }
   } catch (error) {
     console.error('Error playing notification sound:', error);

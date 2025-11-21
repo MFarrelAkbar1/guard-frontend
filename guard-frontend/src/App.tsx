@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { FullPageLoading } from './components/common/Loading';
 // Import notification trigger utilities (makes them available in browser console)
 import './utils/triggerAnomalyNotifications';
+import './utils/injectAnomaly';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
