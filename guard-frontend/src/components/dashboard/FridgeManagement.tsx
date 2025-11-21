@@ -87,8 +87,8 @@ const FridgeManagement: React.FC<FridgeManagementProps> = ({
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Fridge Management</h2>
-          <p className="text-gray-500 mt-1">Manage your connected fridges</p>
+          <h2 className="text-2xl font-bold text-gray-900">Device Management</h2>
+          <p className="text-gray-500 mt-1">Manage your connected devices</p>
         </div>
         <Button
           variant="primary"
@@ -96,7 +96,7 @@ const FridgeManagement: React.FC<FridgeManagementProps> = ({
           className="flex items-center gap-2"
         >
           <Plus className="h-4 w-4" />
-          Add Fridge
+          Add Device
         </Button>
       </div>
 
@@ -187,10 +187,10 @@ const FridgeManagement: React.FC<FridgeManagementProps> = ({
         {fridges.length === 0 && (
           <div className="col-span-full text-center py-12">
             <Power className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500 mb-4">No fridges added yet</p>
+            <p className="text-gray-500 mb-4">No devices added yet</p>
             <Button variant="primary" onClick={handleAddFridge}>
               <Plus className="h-4 w-4 mr-2" />
-              Add Your First Fridge
+              Add Your First Device
             </Button>
           </div>
         )}
@@ -209,7 +209,7 @@ const FridgeManagement: React.FC<FridgeManagementProps> = ({
         isOpen={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
         onConfirm={handleConfirmDelete}
-        title="Delete Fridge"
+        title="Delete Device"
         message={`Are you sure you want to delete "${fridgeToDelete?.name}"? This action cannot be undone.`}
         type="danger"
         confirmText="Delete"

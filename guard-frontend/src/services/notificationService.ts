@@ -167,12 +167,12 @@ export async function showMultipleAnomalyNotifications(anomalies: Anomaly[]): Pr
   // If multiple anomalies, show summary notification
   if (anomalies.length > 1) {
     const criticalCount = anomalies.filter(a => a.severity === 'critical').length;
-    const highCount = anomalies.filter(a => a.severity === 'high').length;
+    const warningCount = anomalies.filter(a => a.severity === 'warning').length;
 
     const title = `⚠️ ${anomalies.length} New Anomalies Detected`;
     const severitySummary = [];
     if (criticalCount > 0) severitySummary.push(`${criticalCount} Critical`);
-    if (highCount > 0) severitySummary.push(`${highCount} High`);
+    if (warningCount > 0) severitySummary.push(`${warningCount} Warning`);
 
     const options: NotificationOptions = {
       body: severitySummary.length > 0

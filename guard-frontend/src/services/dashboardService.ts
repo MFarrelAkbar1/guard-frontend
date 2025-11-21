@@ -265,26 +265,30 @@ export async function getEnergyChartData(): Promise<EnergyChartData> {
 
 /**
  * Get data point counts for calendar (count of power_readings per day)
+ * Uses server-side counting to avoid the 1000-record client limit
  */
 export async function getDataPointCountsForCalendar(month: number, year: number): Promise<Map<string, number>> {
   try {
-    const startDate = new Date(year, month, 1).toISOString();
-    const endDate = new Date(year, month + 1, 0, 23, 59, 59).toISOString();
-
-    const { data, error } = await supabase
-      .from('power_readings')
-      .select('recorded_at')
-      .gte('recorded_at', startDate)
-      .lte('recorded_at', endDate);
-
-    if (error) throw error;
-
-    // Group by date and count
+    // Generate all dates in the month
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
     const countsByDate = new Map<string, number>();
-    data?.forEach(reading => {
-      const date = reading.recorded_at.split('T')[0];
-      countsByDate.set(date, (countsByDate.get(date) || 0) + 1);
-    });
+
+    // Query each day individually with count
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const startOfDay = new Date(year, month, day, 0, 0, 0).toISOString();
+      const endOfDay = new Date(year, month, day, 23, 59, 59, 999).toISOString();
+
+      const { count, error } = await supabase
+        .from('power_readings')
+        .select('*', { count: 'exact', head: true })
+        .gte('recorded_at', startOfDay)
+        .lte('recorded_at', endOfDay);
+
+      if (!error && count !== null) {
+        countsByDate.set(dateStr, count);
+      }
+    }
 
     return countsByDate;
   } catch (error) {

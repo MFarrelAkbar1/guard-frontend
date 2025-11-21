@@ -122,9 +122,6 @@ const EnergyCard: React.FC<EnergyCardProps> = ({
       // Call parent callback if provided (for UI updates)
       onControlDevice?.(device.id, pendingAction);
 
-      // Success - no popup needed, button state change is visual feedback
-      console.log(`✅ Success: ${response.message}`);
-
     } catch (error) {
       console.error('Failed to control motor:', error);
       // Only show error popup

@@ -8,7 +8,7 @@ import {
   HelpCircle,
   LogOut,
   X,
-  Refrigerator
+  Cpu
 } from 'lucide-react';
 
 interface MenuItem {
@@ -43,11 +43,11 @@ const Sidebar: React.FC<SidebarProps> = ({
       onClick: () => onViewChange('dashboard')
     },
     {
-      id: 'fridges',
-      label: 'Fridges',
-      icon: <Refrigerator className="h-5 w-5" />,
-      active: currentView === 'fridges',
-      onClick: () => onViewChange('fridges')
+      id: 'devices',
+      label: 'Devices',
+      icon: <Cpu className="h-5 w-5" />,
+      active: currentView === 'devices',
+      onClick: () => onViewChange('devices')
     },
     {
       id: 'anomaly',

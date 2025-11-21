@@ -73,7 +73,7 @@ const FridgeModal: React.FC<FridgeModalProps> = ({
       onSuccess();
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save fridge');
+      setError(err instanceof Error ? err.message : 'Failed to save device');
     } finally {
       setLoading(false);
     }
@@ -91,7 +91,7 @@ const FridgeModal: React.FC<FridgeModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={mode === 'create' ? 'Add New Fridge' : 'Edit Fridge'}
+      title={mode === 'create' ? 'Add New Device' : 'Edit Device'}
       size="md"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -103,7 +103,7 @@ const FridgeModal: React.FC<FridgeModalProps> = ({
 
         <div>
           <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-            Fridge Name <span className="text-red-500">*</span>
+            Device Name <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -113,7 +113,7 @@ const FridgeModal: React.FC<FridgeModalProps> = ({
             onChange={handleChange}
             required
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="e.g., Fridge A"
+            placeholder="e.g., Device A"
           />
         </div>
 
@@ -197,7 +197,7 @@ const FridgeModal: React.FC<FridgeModalProps> = ({
             variant="primary"
             loading={loading}
           >
-            {mode === 'create' ? 'Add Fridge' : 'Save Changes'}
+            {mode === 'create' ? 'Add Device' : 'Save Changes'}
           </Button>
         </div>
       </form>

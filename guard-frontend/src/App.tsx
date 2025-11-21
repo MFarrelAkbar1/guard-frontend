@@ -6,6 +6,8 @@ import DashboardPage from './pages/DashboardPage';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { FullPageLoading } from './components/common/Loading';
+// Import notification trigger utilities (makes them available in browser console)
+import './utils/triggerAnomalyNotifications';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;

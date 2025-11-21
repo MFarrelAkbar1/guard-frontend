@@ -67,7 +67,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
         const [stats, fridgesList, anomalies] = await Promise.all([
           getDashboardStats(),
           getFridges(),
-          getRecentAnomalies(20)
+          getRecentAnomalies(1000)
         ]);
 
         setStatsData(stats);
